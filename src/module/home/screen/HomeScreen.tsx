@@ -4,7 +4,5 @@ import UserHomeScreen from "./UserHomeScreen";
 
 export default function HomeScreen() {
   const { role } = useAuth();
-  if (role === "user") return <UserHomeScreen />;
-  if (role === "driver") return <DriverHomeScreen />;
-  return null;
+  return role === "user" ? <UserHomeScreen /> : <DriverHomeScreen />;
 }
