@@ -1,3 +1,10 @@
+import { useAuth } from "../../../context/AuthContext";
+import DriverHomeScreen from "./DriverHomeScreex";
+import UserHomeScreen from "./UserHomeScreen";
+
 export default function HomeScreen() {
-  return <></>;
+  const { role } = useAuth();
+  if (role === "user") return <UserHomeScreen />;
+  if (role === "driver") return <DriverHomeScreen />;
+  return null;
 }

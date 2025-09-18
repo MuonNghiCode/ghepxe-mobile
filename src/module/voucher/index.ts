@@ -1,0 +1,1 @@
+export { default as VoucherScreen } from "./screen/VoucherScreen";
