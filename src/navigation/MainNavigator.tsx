@@ -1,13 +1,10 @@
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { MainTabParamList } from "./type";
-import { HomeScreen } from "../module/home";
-
-const Tab = createBottomTabNavigator<MainTabParamList>();
+import { useContext } from "react";
+import { DriverTabNavigator } from "./DriverTabNavigator";
+import { UserTabNavigator } from "./UserTabNavigator";
+import { AuthContext } from "../context/AuthContext";
 
 export default function MainNavigator() {
-  return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}>
-      <Tab.Screen name="Home" component={HomeScreen} />
-    </Tab.Navigator>
-  );
+  const { role } = useContext(AuthContext);
+
+  return role === "driver" ? <DriverTabNavigator /> : <UserTabNavigator />;
 }
