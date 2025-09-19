@@ -1,10 +1,9 @@
-import { useContext } from "react";
-import { DriverTabNavigator } from "./DriverTabNavigator";
+import { useAuth } from "../context/AuthContext";
 import { UserTabNavigator } from "./UserTabNavigator";
-import { AuthContext } from "../context/AuthContext";
+import { DriverTabNavigator } from "./DriverTabNavigator";
 
 export default function MainNavigator() {
-  const { role } = useContext(AuthContext);
+  const { role } = useAuth();
 
-  return role === "driver" ? <DriverTabNavigator /> : <UserTabNavigator />;
+  return role === "user" ? <UserTabNavigator /> : <DriverTabNavigator />;
 }

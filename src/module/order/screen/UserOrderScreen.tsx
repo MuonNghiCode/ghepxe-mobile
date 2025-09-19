@@ -3,7 +3,7 @@ import tw from "twrnc";
 
 export default function UserOrderScreen() {
   return (
-    <View style={tw`flex-1 items-center justify-center`}>
+    <View style={tw`flex-1 items-center justify-center bg-red-500`}>
       <Text>UserOrderScreen</Text>
     </View>
   );

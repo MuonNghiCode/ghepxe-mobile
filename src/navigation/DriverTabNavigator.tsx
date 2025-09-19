@@ -4,12 +4,25 @@ import { TripScreen } from "../module/trip";
 import { OrderScreen } from "../module/order";
 import { StatisticScreen } from "../module/statistic";
 import { UserScreen } from "../module/user";
+import CustomTabBar from "../components/CustomTabBar";
 
 const Tab = createBottomTabNavigator();
 
 export function DriverTabNavigator() {
   return (
-    <Tab.Navigator>
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          overflow: "hidden",
+          elevation: 0,
+          borderTopWidth: 0,
+        },
+      }}
+      tabBar={(props) => <CustomTabBar {...props} />}
+    >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Trip" component={TripScreen} />
       <Tab.Screen name="Order" component={OrderScreen} />
