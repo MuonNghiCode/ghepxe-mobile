@@ -21,21 +21,6 @@ export default function WelcomeScreen() {
       resizeMode="cover"
     >
       <View
-        style={[
-          tw`absolute top-0 left-0 w-full h-full`,
-          { backgroundColor: "rgba(0,0,0,0.45)", zIndex: 1 },
-        ]}
-        pointerEvents="none"
-      />
-      <Image
-        source={require("../../../assets/pictures/auth/noise.png")}
-        style={[
-          tw`absolute top-0 left-0 w-full h-full opacity-10`,
-          { zIndex: 2 },
-        ]}
-        resizeMode="cover"
-      />
-      <View
         style={[tw`flex-1 w-full justify-between items-center`, { zIndex: 3 }]}
       >
         <View style={tw`mt-60 items-center`}>
