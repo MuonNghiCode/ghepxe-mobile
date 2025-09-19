@@ -16,7 +16,6 @@ export default function CustomTabBar({
 
   return (
     <View style={tw`relative`}>
-      {/* Background tabbar với SVG lõm */}
       <View
         style={[
           tw`flex-row justify-around items-center relative rounded-t-xl`,
@@ -26,7 +25,6 @@ export default function CustomTabBar({
           },
         ]}
       >
-        {/* SVG tạo phần lõm */}
         <View
           style={[
             tw`absolute`,
@@ -46,7 +44,6 @@ export default function CustomTabBar({
           </Svg>
         </View>
 
-        {/* Render tabs */}
         {state.routes.map((route, index) => {
           const isFocused = state.index === index;
 
@@ -74,7 +71,6 @@ export default function CustomTabBar({
             }
           };
 
-          // Gán icon và label theo route
           let iconName: keyof typeof Ionicons.glyphMap = "home";
           let displayLabel = label;
           switch (route.name) {
@@ -98,6 +94,10 @@ export default function CustomTabBar({
               iconName = "person";
               displayLabel = "Người dùng";
               break;
+            case "Statistic":
+              iconName = "bar-chart";
+              displayLabel = "Thống kê";
+              break;
           }
 
           if (isFocused) {
@@ -113,7 +113,6 @@ export default function CustomTabBar({
                   },
                 ]}
               >
-                {/* Tab active với text bên trong */}
                 <View
                   style={[
                     tw`w-16 h-16 rounded-full justify-center items-center`,
