@@ -1,1 +1,1 @@
-export { default as TripScreen } from "./screen/TripSceen";
+export { default as TripScreen } from "./screen/TripScreen";

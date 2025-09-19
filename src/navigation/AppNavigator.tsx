@@ -3,13 +3,12 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AuthNavigator from "./AuthNavigator";
 import MainNavigator from "./MainNavigator";
 import { RootStackParamList } from "./type";
-import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-  const { isLoggedIn } = useContext(AuthContext);
+  const { isLoggedIn } = useAuth();
 
   return (
     <NavigationContainer>
