@@ -12,6 +12,8 @@ import { useAuth } from "../../../context/AuthContext";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
+type Role = "user" | "driver";
+
 export default function LoginScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -20,6 +22,22 @@ export default function LoginScreen() {
   const { login } = useAuth();
   const navigation = useNavigation();
 
+  const fakeAccounts = [
+    { username: "user", password: "123456", role: "user" },
+    { username: "driver", password: "123456", role: "driver" },
+  ];
+
+  function handleLogin() {
+    const found = fakeAccounts.find(
+      (acc) => acc.username === username && acc.password === password
+    );
+    if (found) {
+      login(found.role as Role);
+    } else {
+      alert("Tài khoản hoặc mật khẩu không đúng!");
+      return;
+    }
+  }
   return (
     <View style={tw`flex-1 bg-[#fcfcfc]`}>
       {/* Header image + Back button */}
@@ -108,7 +126,7 @@ export default function LoginScreen() {
 
         <TouchableOpacity
           style={[tw`rounded-full py-3 mb-6`, { backgroundColor: "#00A982" }]}
-          onPress={() => login("user")}
+          onPress={handleLogin}
         >
           <Text style={tw`text-white text-center text-base font-bold`}>
             Đăng Nhập
@@ -145,9 +163,10 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Register link */}
         <View style={tw`flex-row justify-center`}>
-          <Text style={tw`text-gray-500`}>Chưa có tài khoản? </Text>
+          <Text style={[tw`text-[#6B6B6B]`, { fontSize: 16 }]}>
+            Chưa có tài khoản?{" "}
+          </Text>
           <TouchableOpacity
             onPress={() => navigation.navigate("Register" as never)}
           >
@@ -157,7 +176,7 @@ export default function LoginScreen() {
                 {
                   textDecorationLine: "underline",
                   fontSize: 16,
-                  lineHeight: 20,
+                  // lineHeight: 20,
                 },
               ]}
             >
