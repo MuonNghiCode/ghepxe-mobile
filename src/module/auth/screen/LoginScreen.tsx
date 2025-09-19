@@ -163,7 +163,6 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Register link */}
         <View style={tw`flex-row justify-center`}>
           <Text style={[tw`text-[#6B6B6B]`, { fontSize: 16 }]}>
             Chưa có tài khoản?{" "}
