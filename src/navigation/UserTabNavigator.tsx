@@ -8,6 +8,15 @@ import CustomTabBar from "../components/CustomTabBar";
 
 const Tab = createBottomTabNavigator();
 
+/**
+ * Bottom tab navigator component that wires the app's five main screens to a custom tab bar.
+ *
+ * Renders a configured Tab.Navigator with the routes: Home, Trip, Order, Voucher, and User.
+ * The navigator hides the header for all tabs and applies a rounded-top tab bar style.
+ * The tab bar is rendered by the CustomTabBar component.
+ *
+ * @returns A React element containing the configured bottom tab navigator.
+ */
 export function UserTabNavigator() {
   return (
     <Tab.Navigator

@@ -10,6 +10,12 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "../../../navigation/type";
 
+/**
+ * Full-screen welcome screen with a background image, hero title, and actions to navigate to auth flows.
+ *
+ * Displays a two-line branded message and two touchable actions: "Đăng Nhập" navigates to the `Login` screen
+ * and "Tạo tài khoản" navigates to the `Register` screen.
+ */
 export default function WelcomeScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<AuthStackParamList>>();

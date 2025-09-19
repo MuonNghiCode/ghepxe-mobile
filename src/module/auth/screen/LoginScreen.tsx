@@ -12,6 +12,24 @@ import { useAuth } from "../../../context/AuthContext";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
+/**
+ * Login screen component rendering a full authentication UI for users.
+ *
+ * Renders a header image with a back button, inputs for username and password
+ * (including a show/hide toggle), a "remember me" toggle, social login buttons,
+ * and navigation to the Register screen. Pressing the primary "Đăng Nhập" button
+ * calls the `login` function from AuthContext with a fixed role ("user").
+ *
+ * Local state:
+ * - `username` and `password` hold the input values.
+ * - `showPass` controls password visibility.
+ * - `remember` toggles the remembered-account state.
+ *
+ * Note: This component does not perform client-side validation or error handling;
+ * social and "Quên tài khoản" actions are UI-only (no handlers implemented).
+ *
+ * @returns The login screen JSX element.
+ */
 export default function LoginScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");

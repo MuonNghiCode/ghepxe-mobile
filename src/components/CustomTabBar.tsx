@@ -6,6 +6,27 @@ import tw from "twrnc";
 
 const { width: screenWidth } = Dimensions.get("window");
 
+/**
+ * Custom bottom tab bar component for a React Navigation BottomTabNavigator.
+ *
+ * Renders a horizontal tab bar with a centered raised indicator behind the active tab,
+ * per-tab Ionicons icons, and Vietnamese display labels for known routes. The active tab
+ * is shown as a larger green circular button that appears elevated and overlaps the bar.
+ *
+ * The component expects the standard BottomTabBarProps (state, descriptors, navigation).
+ * Tapping a tab emits a "tabPress" event via `navigation.emit` and navigates to the
+ * associated route if the tab is not already focused and the event is not prevented.
+ *
+ * Known route name → display label mappings:
+ * - "Home" → "Trang chủ"
+ * - "Trip" → "Chuyến đi"
+ * - "Order" → "Đơn hàng"
+ * - "Voucher" → "Ví voucher"
+ * - "User" → "Người dùng"
+ * - "Statistic" → "Thống kê"
+ *
+ * @returns A React element to be used as a custom bottom tab bar.
+ */
 export default function CustomTabBar({
   state,
   descriptors,

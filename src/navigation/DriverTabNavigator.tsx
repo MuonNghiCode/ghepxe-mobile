@@ -8,6 +8,15 @@ import CustomTabBar from "../components/CustomTabBar";
 
 const Tab = createBottomTabNavigator();
 
+/**
+ * Bottom tab navigator for the driver app.
+ *
+ * Renders a Tab.Navigator configured with a custom tab bar and five tabs:
+ * Home (initial), Trip, Order, Statistic, and User. The navigator hides the
+ * header for all screens and applies a rounded top-corner style to the tab bar.
+ *
+ * @returns A React element containing the configured bottom tab navigator.
+ */
 export function DriverTabNavigator() {
   return (
     <Tab.Navigator
