@@ -111,21 +111,27 @@ export default function UserHomeScreen() {
                   source={require("../../../assets/pictures/home/giaohang.png")}
                   style={tw`w-14 h-14`}
                 />
-                <Text style={tw`mt-2 text-xs text-gray-700`}>Giao hàng</Text>
+                <Text style={tw`mt-2 text-xs font-semibold text-gray-700`}>
+                  Giao hàng
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity style={tw`items-center`}>
                 <Image
                   source={require("../../../assets/pictures/home/noithanh.png")}
                   style={tw`w-14 h-14`}
                 />
-                <Text style={tw`mt-2 text-xs text-gray-700`}>Nội thành</Text>
+                <Text style={tw`mt-2 text-xs font-semibold text-gray-700`}>
+                  Nội thành
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity style={tw`items-center`}>
                 <Image
                   source={require("../../../assets/pictures/home/lientinh.png")}
                   style={tw`w-14 h-14`}
                 />
-                <Text style={tw`mt-2 text-xs text-gray-700`}>Liên tỉnh</Text>
+                <Text style={tw`mt-2 text-xs font-semibold text-gray-700`}>
+                  Liên tỉnh
+                </Text>
               </TouchableOpacity>
               <View style={tw`items-center`}>
                 <Ionicons
@@ -133,7 +139,9 @@ export default function UserHomeScreen() {
                   size={50}
                   color="#00A982"
                 />
-                <Text style={tw`mt-2 text-xs text-gray-700`}>Thêm</Text>
+                <Text style={tw`mt-2 text-xs font-semibold text-gray-700`}>
+                  Thêm
+                </Text>
               </View>
             </View>
             {/* <View style={tw`mt-6 h-0.5 bg-gray-100`} /> */}
