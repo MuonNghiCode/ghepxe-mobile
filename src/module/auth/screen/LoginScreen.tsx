@@ -158,7 +158,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={tw`flex-row justify-center`}>
+        <View style={tw`flex-row justify-center gap-1`}>
           <Text style={[tw`text-[#6B6B6B]`, { fontSize: 16 }]}>
             Chưa có tài khoản?
           </Text>
