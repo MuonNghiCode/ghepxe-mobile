@@ -10,7 +10,12 @@ import {
   Dimensions,
 } from "react-native";
 import tw from "twrnc";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Entypo,
+  FontAwesome6,
+  Ionicons,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -34,7 +39,9 @@ export default function UserHomeScreen() {
   const [pickupLocation, setPickupLocation] = useState(
     "Bạn muốn đặt hàng ở đâu?"
   );
-  const [deliveryLocation, setDeliveryLocation] = useState("");
+  const [deliveryLocation, setDeliveryLocation] = useState(
+    "Bạn muốn giao hàng đến đâu?"
+  );
   const [showAllServices, setShowAllServices] = useState(false);
 
   const flatListRef = useRef<FlatList<any>>(null);
@@ -276,26 +283,42 @@ export default function UserHomeScreen() {
             <View
               style={[tw`-mt-15 mb-4 bg-white rounded-2xl p-3`, shadowStyle]}
             >
-              <View style={tw`flex-row items-center mb-2`}>
-                <View style={tw`w-2 h-2 rounded-full bg-black mr-3 ml-1`} />
-                <TextInput
-                  style={tw`flex-1 text-base font-medium text-black py-2`}
-                  value={pickupLocation}
-                  onChangeText={setPickupLocation}
-                  placeholder="Bạn muốn đặt hàng ở đâu?"
-                  placeholderTextColor="#6B6B6B"
+              <TouchableOpacity
+                style={tw`flex-row items-center mb-3`}
+                activeOpacity={0.8}
+                onPress={() => navigation.navigate("Billing" as never)}
+              >
+                <MaterialCommunityIcons
+                  name="stop"
+                  size={16}
+                  color="white"
+                  style={tw`bg-black rounded-full p-1 `}
                 />
-              </View>
-              <View style={tw`flex-row items-center`}>
-                <View style={tw`w-2 h-2 rounded-full bg-[#00A982] mr-3 ml-1`} />
-                <TextInput
-                  style={tw`flex-1 text-base py-2`}
-                  value={deliveryLocation}
-                  onChangeText={setDeliveryLocation}
-                  placeholder="Bạn muốn giao hàng đến đâu?"
-                  placeholderTextColor="#6B6B6B"
+                <Text
+                  style={tw`flex-1 text-base font-medium text-gray-600 py-2 ml-5`}
+                  numberOfLines={1}
+                >
+                  {pickupLocation}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={tw`flex-row items-center mb-2`}
+                activeOpacity={0.8}
+                onPress={() => navigation.navigate("Shipping" as never)}
+              >
+                <Entypo
+                  name="arrow-down"
+                  size={16}
+                  color="#fff"
+                  style={tw`bg-[#00A982] rounded-full p-1 `}
                 />
-              </View>
+                <Text
+                  style={tw`flex-1 text-base font-medium text-gray-600 ml-5`}
+                >
+                  {deliveryLocation}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* Services Section */}

@@ -5,10 +5,13 @@ export type AuthStackParamList = {
   Welcome: undefined;
 };
 
-export type MainTabParamList = {
-  Home: undefined;
-  Profile: undefined;
-  Settings: undefined;
+export type DriverTabParamList = {
+  DriverTabs: undefined;
+};
+export type UserTabParamList = {
+  Billing: undefined;
+  UserTabs: undefined;
+  Shipping: undefined;
 };
 
 export type RootStackParamList = {
