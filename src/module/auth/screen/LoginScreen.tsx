@@ -18,7 +18,7 @@ export default function LoginScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [remember, setRemember] = useState(true);
+  const [remember, setRemember] = useState(false);
   const { login } = useAuth();
   const navigation = useNavigation();
 
@@ -40,7 +40,6 @@ export default function LoginScreen() {
   }
   return (
     <View style={tw`flex-1 bg-[#fcfcfc]`}>
-      {/* Header image + Back button */}
       <View style={tw`overflow-hidden relative`}>
         <Image
           source={require("../../../assets/pictures/auth/Vector.png")}
@@ -54,9 +53,7 @@ export default function LoginScreen() {
           <Ionicons name="arrow-back" size={22} color="#00A982" />
         </TouchableOpacity>
       </View>
-      {/* Form content */}
       <View style={tw`px-6 -mt-10`}>
-        {/* Title */}
         <Text
           style={[
             tw`text-5xl text-center mb-3 text-[#00A982]`,
@@ -68,8 +65,6 @@ export default function LoginScreen() {
         <Text style={tw`text-center text-gray-500 mb-10`}>
           Đăng nhập vào tài khoản của bạn
         </Text>
-
-        {/* Username */}
         <View
           style={tw`flex-row items-center bg-gray-100 rounded-xl px-4 mb-5`}
         >
@@ -83,8 +78,6 @@ export default function LoginScreen() {
             placeholderTextColor="#888"
           />
         </View>
-
-        {/* Password */}
         <View
           style={tw`flex-row items-center bg-gray-100 rounded-xl px-4 mb-5`}
         >
@@ -119,7 +112,9 @@ export default function LoginScreen() {
             />
             <Text style={tw`ml-2 text-gray-700`}>Nhớ tài khoản</Text>
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("ForgetPassword" as never)}
+          >
             <Text style={tw`text-[#00A982]`}>Quên tài khoản ?</Text>
           </TouchableOpacity>
         </View>
@@ -163,9 +158,9 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={tw`flex-row justify-center`}>
+        <View style={tw`flex-row justify-center gap-1`}>
           <Text style={[tw`text-[#6B6B6B]`, { fontSize: 16 }]}>
-            Chưa có tài khoản?{" "}
+            Chưa có tài khoản?
           </Text>
           <TouchableOpacity
             onPress={() => navigation.navigate("Register" as never)}

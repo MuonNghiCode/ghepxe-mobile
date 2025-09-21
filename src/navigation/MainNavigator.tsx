@@ -1,4 +1,4 @@
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "@context/AuthContext";
 import { UserTabNavigator } from "./UserTabNavigator";
 import { DriverTabNavigator } from "./DriverTabNavigator";
 

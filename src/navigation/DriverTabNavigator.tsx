@@ -1,10 +1,10 @@
+import CustomTabBar from "@components/CustomTabBar";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { HomeScreen } from "../module/home";
-import { TripScreen } from "../module/trip";
-import { OrderScreen } from "../module/order";
-import { StatisticScreen } from "../module/statistic";
-import { UserScreen } from "../module/user";
-import CustomTabBar from "../components/CustomTabBar";
+import { HomeScreen } from "src/module/home";
+import { OrderScreen } from "src/module/order";
+import { StatisticScreen } from "src/module/statistic";
+import { TripScreen } from "src/module/trip";
+import { UserScreen } from "src/module/user";
 
 const Tab = createBottomTabNavigator();
 
