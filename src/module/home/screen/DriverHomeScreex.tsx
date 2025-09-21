@@ -11,10 +11,10 @@ import {
 import tw from "twrnc";
 import { Ionicons } from "@expo/vector-icons";
 import OrderCard from "@components/OrderCard";
+import { useNavigation } from "@react-navigation/native";
 
 const { width: screenWidth } = Dimensions.get("window");
 
-// Cập nhật fake data
 const suggestedOrders: {
   id: string;
   serviceType: "single" | "shared";
@@ -78,7 +78,7 @@ const suggestedOrders: {
 export default function DriverHomeScreen() {
   const [isOnline, setIsOnline] = useState(false);
   const [orders, setOrders] = useState(suggestedOrders);
-
+  const navigation = useNavigation();
   const shadowStyle = useMemo(
     () => ({
       shadowColor: "#00A982",
@@ -129,9 +129,7 @@ export default function DriverHomeScreen() {
           <View style={[tw`absolute inset-0`, overlayStyle]} />
           <TouchableOpacity
             style={tw`absolute top-12 right-6`}
-            onPress={() => {
-              console.log("Navigate to profile");
-            }}
+            onPress={() => navigation.navigate("User" as never)}
           >
             <View
               style={tw`w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-[#00A982] items-center justify-center`}

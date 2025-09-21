@@ -11,34 +11,16 @@ import {
 } from "react-native";
 import tw from "twrnc";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 const { width: screenWidth } = Dimensions.get("window");
 
-// Move static data outside component to prevent re-creation
 const adData = [
   require("../../../assets/pictures/home/ad1.png"),
   require("../../../assets/pictures/home/ad2.png"),
   require("../../../assets/pictures/home/ad3.png"),
   require("../../../assets/pictures/home/ad4.png"),
   require("../../../assets/pictures/home/ad5.png"),
-];
-
-const serviceData = [
-  {
-    id: "delivery",
-    image: require("../../../assets/pictures/home/giaohang.png"),
-    title: "Giao hàng",
-  },
-  {
-    id: "city",
-    image: require("../../../assets/pictures/home/noithanh.png"),
-    title: "Nội thành",
-  },
-  {
-    id: "province",
-    image: require("../../../assets/pictures/home/lientinh.png"),
-    title: "Liên tỉnh",
-  },
 ];
 
 const exploreData = [
@@ -57,7 +39,7 @@ export default function UserHomeScreen() {
 
   const flatListRef = useRef<FlatList<any>>(null);
   const autoScrollInterval = useRef<NodeJS.Timeout | null>(null);
-
+  const navigation = useNavigation();
   const shadowStyle = useMemo(
     () => ({
       shadowColor: "#00A982",
@@ -268,9 +250,7 @@ export default function UserHomeScreen() {
 
           <TouchableOpacity
             style={tw`absolute top-12 right-6`}
-            onPress={() => {
-              console.log("Navigate to profile");
-            }}
+            onPress={() => navigation.navigate("User" as never)}
           >
             <View
               style={tw`w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-[#00A982] items-center justify-center`}
