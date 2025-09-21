@@ -12,6 +12,7 @@ export default function App() {
     RobotoSerifRegular: require("./src/assets/fonts/RobotoSerif-Regular.ttf"),
     RobotoSerifBold: require("./src/assets/fonts/RobotoSerif-Bold.ttf"),
     RobotoSerifBoldItalic: require("./src/assets/fonts/RobotoSerif-BoldItalic.ttf"),
+    RobotoSerifSemiBold: require("./src/assets/fonts/RobotoSerif-SemiBold.ttf"),
   });
 
   useEffect(() => {

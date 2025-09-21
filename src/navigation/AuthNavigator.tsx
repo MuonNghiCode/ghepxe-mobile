@@ -5,7 +5,7 @@ import {
   LoginScreen,
   RegisterScreen,
   WelcomeScreen,
-} from "../module/auth";
+} from "src/module/auth";
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 

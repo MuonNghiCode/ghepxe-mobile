@@ -1,9 +1,9 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import AuthNavigator from "./AuthNavigator";
-import MainNavigator from "./MainNavigator";
 import { RootStackParamList } from "./type";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "@context/AuthContext";
+import MainNavigator from "./MainNavigator";
+import AuthNavigator from "./AuthNavigator";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
