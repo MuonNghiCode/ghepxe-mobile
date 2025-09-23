@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { DriverTabNavigator } from "./DriverTabNavigator";
-import { DriverTabParamList } from "./type";
+import { DriverTabParamList } from "../type";
 
 const Stack = createNativeStackNavigator<DriverTabParamList>();
 

@@ -3,6 +3,7 @@ export type AuthStackParamList = {
   Register: undefined;
   ForgetPassword: undefined;
   Welcome: undefined;
+  AnimationWelcome: undefined;
 };
 
 export type DriverTabParamList = {

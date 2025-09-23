@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { UserTabNavigator } from "./UserTabNavigator";
-import { UserTabParamList } from "./type";
+import { UserTabParamList } from "../type";
 import { BillingAddress, ShippingAddress } from "src/module/address";
 
 const Stack = createNativeStackNavigator<UserTabParamList>();

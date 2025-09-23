@@ -3,19 +3,13 @@ import {
   Text,
   View,
   Image,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   FlatList,
   Dimensions,
 } from "react-native";
 import tw from "twrnc";
-import {
-  Entypo,
-  FontAwesome6,
-  Ionicons,
-  MaterialCommunityIcons,
-} from "@expo/vector-icons";
+import { Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 const { width: screenWidth } = Dimensions.get("window");
