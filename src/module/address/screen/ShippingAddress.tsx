@@ -20,6 +20,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "src/navigation/type";
+import { useCurrentLocation } from "src/hooks/useCurrentLocation";
 
 type ShippingAddressNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -98,42 +99,25 @@ const HelpItem = ({ item, onPress }: HelpItemProps) => (
 export default function ShippingAddress() {
   const navigation = useNavigation<ShippingAddressNavigationProp>();
   const [searchText, setSearchText] = useState("");
-
-  const [currentLocation, setCurrentLocation] =
-    useState<string>("Đang lấy vị trí...");
   const [mapLocation, setMapLocation] = useState<any>(null);
 
-  const fetchCurrentLocation = useCallback(async () => {
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status != "granted") {
-      setCurrentLocation("Không có quyền truy cập vị trí");
-      return;
-    }
-    let location = await Location.getCurrentPositionAsync({});
-    let address = await Location.reverseGeocodeAsync(location.coords);
-    if (address && address.length > 0) {
-      const { street, name, district, city } = address[0];
-      setCurrentLocation(
-        [street || name, district, city].filter(Boolean).join(", ")
-      );
-    } else {
-      setCurrentLocation("Không xác định được vị trí");
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchCurrentLocation();
-  }, [fetchCurrentLocation]);
+  // Dùng hook lấy vị trí hiện tại
+  const {
+    address: currentLocation,
+    location,
+    loading,
+    error,
+    refresh,
+  } = useCurrentLocation();
 
   useEffect(() => {
     if (navigation?.getState) {
       const params = navigation
         ?.getState?.()
-        ?.routes.find((r) => r.name === "Billing")?.params as
+        ?.routes.find((r) => r.name === "Shipping")?.params as
         | { mapLocation?: any }
         | undefined;
       if (params?.mapLocation) {
-        setCurrentLocation(params.mapLocation.address);
         setMapLocation(params.mapLocation);
       }
     }
@@ -144,8 +128,10 @@ export default function ShippingAddress() {
     navigation.goBack();
   }, [navigation]);
 
+  // handleCurrentLocation dùng cho nghiệp vụ khác, không gọi refresh ở đây
   const handleCurrentLocation = useCallback(() => {
-    console.log("Getting current location...");
+    // Nghiệp vụ khác, ví dụ mở modal, chọn lại vị trí, v.v.
+    console.log("Nghiệp vụ khác khi lấy vị trí hiện tại");
   }, []);
 
   const handleAddNew = useCallback(() => {
@@ -246,7 +232,7 @@ export default function ShippingAddress() {
                 Lấy vị trí hiện tại
               </Text>
               <Text style={tw`text-sm text-gray-500 mt-1`} numberOfLines={1}>
-                {currentLocation}
+                {loading ? "Đang lấy vị trí..." : currentLocation}
               </Text>
             </View>
           </TouchableOpacity>

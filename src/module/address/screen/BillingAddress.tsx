@@ -20,6 +20,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "src/navigation/type";
+import { GOOGLE_PLACES_API_KEY } from "@env";
+import { useCurrentLocation } from "src/hooks/useCurrentLocation";
 
 type BillingAddressNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -98,31 +100,51 @@ const HelpItem = ({ item, onPress }: HelpItemProps) => (
 export default function BillingAddress() {
   const navigation = useNavigation<BillingAddressNavigationProp>();
   const [searchText, setSearchText] = useState("");
-  const [currentLocation, setCurrentLocation] =
-    useState<string>("Đang lấy vị trí...");
   const [mapLocation, setMapLocation] = useState<any>(null);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
 
-  const fetchCurrentLocation = useCallback(async () => {
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status != "granted") {
-      setCurrentLocation("Không có quyền truy cập vị trí");
-      return;
-    }
-    let location = await Location.getCurrentPositionAsync({});
-    let address = await Location.reverseGeocodeAsync(location.coords);
-    if (address && address.length > 0) {
-      const { street, name, district, city } = address[0];
-      setCurrentLocation(
-        [street || name, district, city].filter(Boolean).join(", ")
-      );
-    } else {
-      setCurrentLocation("Không xác định được vị trí");
-    }
-  }, []);
+  // Dùng hook lấy vị trí hiện tại
+  const {
+    address: currentLocation,
+    location,
+    loading,
+    error,
+    refresh,
+  } = useCurrentLocation();
 
-  useEffect(() => {
-    fetchCurrentLocation();
-  }, [fetchCurrentLocation]);
+  const fetchAddressSuggestions = useCallback(
+    async (input: string) => {
+      if (!input) {
+        setSuggestions([]);
+        setShowDropdown(false);
+        return;
+      }
+      try {
+        // Ưu tiên lấy vị trí từ hook
+        const latitude = location?.coords.latitude || 10.7769;
+        const longitude = location?.coords.longitude || 106.7009;
+
+        const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
+          input
+        )}&location=${latitude},${longitude}&radius=5000&language=vi&key=${GOOGLE_PLACES_API_KEY}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.predictions) {
+          setSuggestions(data.predictions);
+          setShowDropdown(true);
+        } else {
+          setSuggestions([]);
+          setShowDropdown(false);
+        }
+      } catch (error) {
+        setSuggestions([]);
+        setShowDropdown(false);
+      }
+    },
+    [location]
+  );
 
   useEffect(() => {
     if (navigation?.getState) {
@@ -132,7 +154,6 @@ export default function BillingAddress() {
         | { mapLocation?: any }
         | undefined;
       if (params?.mapLocation) {
-        setCurrentLocation(params.mapLocation.address);
         setMapLocation(params.mapLocation);
       }
     }
@@ -142,8 +163,10 @@ export default function BillingAddress() {
     navigation.goBack();
   }, [navigation]);
 
+  // handleCurrentLocation dùng cho nghiệp vụ khác, không gọi refresh ở đây
   const handleCurrentLocation = useCallback(() => {
-    console.log("Getting current location...");
+    // Nghiệp vụ khác, ví dụ mở modal, chọn lại vị trí, v.v.
+    console.log("Nghiệp vụ khác khi lấy vị trí hiện tại");
   }, []);
 
   const handleAddNew = useCallback(() => {
@@ -173,6 +196,11 @@ export default function BillingAddress() {
   const handleMapSelection = useCallback(() => {
     navigation.navigate("MapSelect", { returnScreen: "Billing" });
   }, [navigation]);
+
+  const handleSearchTextChange = (text: string) => {
+    setSearchText(text);
+    fetchAddressSuggestions(text);
+  };
 
   return (
     <SafeAreaView style={tw`flex-1 bg-white`}>
@@ -220,11 +248,32 @@ export default function BillingAddress() {
           <TextInput
             style={tw`flex-1 text-base font-semibold text-gray-600 ml-3`}
             value={searchText}
-            onChangeText={setSearchText}
+            onChangeText={handleSearchTextChange}
             placeholder="Số nhà, đường, phường, quận"
             placeholderTextColor="#6B6B6B"
             returnKeyType="search"
           />
+          {showDropdown && suggestions.length > 0 && (
+            <View
+              style={tw`absolute top-12 left-0 right-0 bg-[#fcfcfc] shadow-lg z-50`}
+            >
+              {suggestions.map((item) => (
+                <TouchableOpacity
+                  key={item.place_id}
+                  style={tw`px-4 py-2 border-b border-gray-100`}
+                  onPress={() => {
+                    setSearchText(item.description);
+                    setShowDropdown(false);
+                    // setSuggestions([]);
+                  }}
+                >
+                  <Text style={tw`text-base text-black`}>
+                    {item.description}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
         <View style={tw`bg-white px-4 py-4 mb-2`}>
@@ -244,7 +293,7 @@ export default function BillingAddress() {
                 Lấy vị trí hiện tại
               </Text>
               <Text style={tw`text-sm text-gray-500 mt-1`} numberOfLines={1}>
-                {currentLocation}
+                {loading ? "Đang lấy vị trí..." : currentLocation}
               </Text>
             </View>
           </TouchableOpacity>

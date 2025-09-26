@@ -11,7 +11,7 @@ import {
 import tw from "twrnc";
 import { Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import * as Location from "expo-location";
+import { useCurrentLocation } from "src/hooks/useCurrentLocation";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -31,11 +31,17 @@ const exploreData = [
 
 export default function UserHomeScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [pickupLocation, setPickupLocation] = useState("Đang lấy vị trí");
   const [deliveryLocation, setDeliveryLocation] = useState(
     "Bạn muốn giao hàng đến đâu?"
   );
   const [showAllServices, setShowAllServices] = useState(false);
+
+  const {
+    address: pickupLocation,
+    loading,
+    error,
+    refresh,
+  } = useCurrentLocation();
 
   const flatListRef = useRef<FlatList<any>>(null);
   const autoScrollInterval = useRef<NodeJS.Timeout | null>(null);
@@ -82,26 +88,6 @@ export default function UserHomeScreen() {
     startAutoScroll();
     return stopAutoScroll;
   }, [startAutoScroll, stopAutoScroll]);
-
-  useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status != "granted") {
-        setPickupLocation("Bạn muốn đặt hàng ở đâu?");
-        return;
-      }
-      let location = await Location.getCurrentPositionAsync({});
-      let address = await Location.reverseGeocodeAsync(location.coords);
-      if (address && address.length > 0) {
-        const { street, name, district, city } = address[0];
-        setPickupLocation(
-          [street || name, district, city].filter(Boolean).join(", ")
-        );
-      } else {
-        setPickupLocation("Không xác định được vị trí");
-      }
-    })();
-  }, []);
 
   const handleScrollEnd = useCallback((event: any) => {
     const index = Math.round(event.nativeEvent.contentOffset.x / 240);
@@ -311,7 +297,7 @@ export default function UserHomeScreen() {
                   style={tw`flex-1 text-base font-medium text-gray-600 py-2 ml-5`}
                   numberOfLines={1}
                 >
-                  {pickupLocation}
+                  {loading ? "Đang lấy vị trí..." : pickupLocation}
                 </Text>
               </TouchableOpacity>
 
