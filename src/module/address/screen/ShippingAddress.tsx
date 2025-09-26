@@ -18,7 +18,13 @@ import {
 } from "src/types/address.interface,";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "src/navigation/type";
 
+type ShippingAddressNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Shipping"
+>;
 // Mock data
 const SAVED_ADDRESSES: AddressItemType[] = [
   { id: 1, title: "XV44+7R Thành Phố XXX", subtitle: "Tỉnh XXX, Vietnam" },
@@ -90,11 +96,12 @@ const HelpItem = ({ item, onPress }: HelpItemProps) => (
 );
 
 export default function ShippingAddress() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<ShippingAddressNavigationProp>();
   const [searchText, setSearchText] = useState("");
 
   const [currentLocation, setCurrentLocation] =
     useState<string>("Đang lấy vị trí...");
+  const [mapLocation, setMapLocation] = useState<any>(null);
 
   const fetchCurrentLocation = useCallback(async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
@@ -117,6 +124,20 @@ export default function ShippingAddress() {
   useEffect(() => {
     fetchCurrentLocation();
   }, [fetchCurrentLocation]);
+
+  useEffect(() => {
+    if (navigation?.getState) {
+      const params = navigation
+        ?.getState?.()
+        ?.routes.find((r) => r.name === "Billing")?.params as
+        | { mapLocation?: any }
+        | undefined;
+      if (params?.mapLocation) {
+        setCurrentLocation(params.mapLocation.address);
+        setMapLocation(params.mapLocation);
+      }
+    }
+  }, [navigation]);
 
   // Callback functions
   const handleGoBack = useCallback(() => {
@@ -152,8 +173,8 @@ export default function ShippingAddress() {
   }, []);
 
   const handleMapSelection = useCallback(() => {
-    console.log("Select from map...");
-  }, []);
+    navigation.navigate("MapSelect", { returnScreen: "Shipping" });
+  }, [navigation]);
 
   return (
     <SafeAreaView style={tw`flex-1 bg-white`}>

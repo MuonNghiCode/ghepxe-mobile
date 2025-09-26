@@ -28,4 +28,11 @@ export type RootStackParamList = {
       address: string;
     };
   };
+  Shipping: {
+    mapLocation: {
+      coords: any;
+      address: string;
+    };
+  }
 };
+
