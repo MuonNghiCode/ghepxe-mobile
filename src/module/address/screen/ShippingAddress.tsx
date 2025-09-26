@@ -8,7 +8,7 @@ import {
 import tw from "twrnc";
 import { Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   AddressItemProps,
@@ -17,6 +17,8 @@ import {
   HelpItemType,
 } from "src/types/address.interface,";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Location from "expo-location";
+
 // Mock data
 const SAVED_ADDRESSES: AddressItemType[] = [
   { id: 1, title: "XV44+7R Thành Phố XXX", subtitle: "Tỉnh XXX, Vietnam" },
@@ -90,6 +92,31 @@ const HelpItem = ({ item, onPress }: HelpItemProps) => (
 export default function ShippingAddress() {
   const navigation = useNavigation();
   const [searchText, setSearchText] = useState("");
+
+  const [currentLocation, setCurrentLocation] =
+    useState<string>("Đang lấy vị trí...");
+
+  const fetchCurrentLocation = useCallback(async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status != "granted") {
+      setCurrentLocation("Không có quyền truy cập vị trí");
+      return;
+    }
+    let location = await Location.getCurrentPositionAsync({});
+    let address = await Location.reverseGeocodeAsync(location.coords);
+    if (address && address.length > 0) {
+      const { street, name, district, city } = address[0];
+      setCurrentLocation(
+        [street || name, district, city].filter(Boolean).join(", ")
+      );
+    } else {
+      setCurrentLocation("Không xác định được vị trí");
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCurrentLocation();
+  }, [fetchCurrentLocation]);
 
   // Callback functions
   const handleGoBack = useCallback(() => {
@@ -198,7 +225,7 @@ export default function ShippingAddress() {
                 Lấy vị trí hiện tại
               </Text>
               <Text style={tw`text-sm text-gray-500 mt-1`} numberOfLines={1}>
-                XV44+7R Thành Phố XXX, Tỉnh XXX, Vietnam
+                {currentLocation}
               </Text>
             </View>
           </TouchableOpacity>

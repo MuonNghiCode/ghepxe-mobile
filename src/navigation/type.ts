@@ -13,9 +13,19 @@ export type UserTabParamList = {
   Billing: undefined;
   UserTabs: undefined;
   Shipping: undefined;
+  MapSelect: undefined;
 };
 
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
+  MapSelect: {
+    returnScreen?: keyof RootStackParamList;
+  };
+  Billing: {
+    mapLocation: {
+      coords: any;
+      address: string;
+    };
+  };
 };

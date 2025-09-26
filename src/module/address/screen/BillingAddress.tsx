@@ -8,7 +8,7 @@ import {
 import tw from "twrnc";
 import { Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   AddressItemProps,
@@ -17,7 +17,15 @@ import {
   HelpItemType,
 } from "src/types/address.interface,";
 import { LinearGradient } from "expo-linear-gradient";
-// Mock data
+import * as Location from "expo-location";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "src/navigation/type";
+
+type BillingAddressNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Billing"
+>;
+
 const SAVED_ADDRESSES: AddressItemType[] = [
   { id: 1, title: "XV44+7R Thành Phố XXX", subtitle: "Tỉnh XXX, Vietnam" },
   { id: 2, title: "XV44+7R Thành Phố XXX", subtitle: "Tỉnh XXX, Vietnam" },
@@ -88,10 +96,48 @@ const HelpItem = ({ item, onPress }: HelpItemProps) => (
 );
 
 export default function BillingAddress() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<BillingAddressNavigationProp>();
   const [searchText, setSearchText] = useState("");
+  const [currentLocation, setCurrentLocation] =
+    useState<string>("Đang lấy vị trí...");
+  const [mapLocation, setMapLocation] = useState<any>(null);
 
-  // Callback functions
+  const fetchCurrentLocation = useCallback(async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status != "granted") {
+      setCurrentLocation("Không có quyền truy cập vị trí");
+      return;
+    }
+    let location = await Location.getCurrentPositionAsync({});
+    let address = await Location.reverseGeocodeAsync(location.coords);
+    if (address && address.length > 0) {
+      const { street, name, district, city } = address[0];
+      setCurrentLocation(
+        [street || name, district, city].filter(Boolean).join(", ")
+      );
+    } else {
+      setCurrentLocation("Không xác định được vị trí");
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCurrentLocation();
+  }, [fetchCurrentLocation]);
+
+  useEffect(() => {
+    if (navigation?.getState) {
+      const params = navigation
+        ?.getState?.()
+        ?.routes.find((r) => r.name === "Billing")?.params as
+        | { mapLocation?: any }
+        | undefined;
+      if (params?.mapLocation) {
+        setCurrentLocation(params.mapLocation.address);
+        setMapLocation(params.mapLocation);
+      }
+    }
+  }, [navigation]);
+
   const handleGoBack = useCallback(() => {
     navigation.goBack();
   }, [navigation]);
@@ -125,8 +171,8 @@ export default function BillingAddress() {
   }, []);
 
   const handleMapSelection = useCallback(() => {
-    console.log("Select from map...");
-  }, []);
+    navigation.navigate("MapSelect", { returnScreen: "Billing" });
+  }, [navigation]);
 
   return (
     <SafeAreaView style={tw`flex-1 bg-white`}>
@@ -198,7 +244,7 @@ export default function BillingAddress() {
                 Lấy vị trí hiện tại
               </Text>
               <Text style={tw`text-sm text-gray-500 mt-1`} numberOfLines={1}>
-                XV44+7R Thành Phố XXX, Tỉnh XXX, Vietnam
+                {currentLocation}
               </Text>
             </View>
           </TouchableOpacity>
