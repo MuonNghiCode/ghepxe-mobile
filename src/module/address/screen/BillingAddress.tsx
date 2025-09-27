@@ -100,8 +100,6 @@ const HelpItem = ({ item, onPress }: HelpItemProps) => (
   </TouchableOpacity>
 );
 
-// Component riêng cho Suggestion Item - REMOVED vì không dùng nữa
-
 export default function BillingAddress() {
   const navigation = useNavigation<BillingAddressNavigationProp>();
   const [searchText, setSearchText] = useState("");
@@ -167,7 +165,7 @@ export default function BillingAddress() {
   }, [navigation]);
 
   const handleCurrentLocation = useCallback(() => {
-    console.log("Nghiệp vụ khác khi lấy vị trí hiện tại");
+    navigation.navigate("ConfirmOrder" as never);
   }, []);
 
   const handleAddNew = useCallback(() => {
