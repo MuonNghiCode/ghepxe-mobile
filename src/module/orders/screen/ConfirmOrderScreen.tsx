@@ -70,6 +70,18 @@ export default function ConfirmOrderScreen() {
     }
   };
 
+  const handleGoBack = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
+
+  const handleNavigateBillingAddress = useCallback(() => {
+    navigation.navigate("OrderBilling" as never);
+  }, [navigation]);
+
+  const handleNavigateShippingAddress = useCallback(() => {
+    navigation.navigate("OrderShipping" as never);
+  }, [navigation]);
+
   return (
     <SafeAreaView style={tw`flex-1 bg-white`}>
       {/* Header */}
@@ -77,7 +89,7 @@ export default function ConfirmOrderScreen() {
         style={tw`flex-row items-center justify-between px-4 py-3 bg-white border-b border-gray-100`}
       >
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={handleGoBack}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={tw`w-10 h-10 items-center justify-center`}
         >
@@ -121,7 +133,12 @@ export default function ConfirmOrderScreen() {
                 </Text>
               </View>
               <View style={tw`mt-2`}>
-                <View style={tw`flex-row items-center mb-4`}>
+                {/* Billing Address */}
+                <TouchableOpacity
+                  style={tw`flex-row items-center mb-4`}
+                  onPress={handleNavigateBillingAddress}
+                  activeOpacity={0.8}
+                >
                   <MaterialCommunityIcons
                     name="stop"
                     size={14}
@@ -134,8 +151,13 @@ export default function ConfirmOrderScreen() {
                     XV44+7R Thành Phố XXX
                   </Text>
                   <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
-                </View>
-                <View style={tw`flex-row items-center`}>
+                </TouchableOpacity>
+                {/* Shipping Address */}
+                <TouchableOpacity
+                  style={tw`flex-row items-center`}
+                  onPress={handleNavigateShippingAddress}
+                  activeOpacity={0.8}
+                >
                   <Entypo
                     name="arrow-down"
                     size={14}
@@ -148,7 +170,7 @@ export default function ConfirmOrderScreen() {
                     XV44+7R Thành Phố XXX
                   </Text>
                   <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
-                </View>
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -325,9 +347,9 @@ export default function ConfirmOrderScreen() {
                     <Text style={tw`text-xs text-gray-500 mb-1`}>
                       Khối lượng (kg) <Text style={tw`text-[#00A982]`}>*</Text>
                     </Text>
-                    <View style={tw`flex-row items-center`}>
+                    <View style={tw`relative`}>
                       <TextInput
-                        style={tw`flex-1 border border-gray-300 rounded-lg px-3 py-2 text-base text-black`}
+                        style={tw`flex-1 border border-gray-300 rounded-lg px-3 py-2 text-base text-black pr-10`}
                         placeholder="kg"
                         placeholderTextColor="#6B6B6B"
                         value={
@@ -336,7 +358,6 @@ export default function ConfirmOrderScreen() {
                             : ""
                         }
                         onChangeText={(text) => {
-                          // Loại bỏ mọi ký tự không phải số
                           const onlyNumber = text.replace(/[^0-9]/g, "");
                           setWeightRaw(onlyNumber);
                         }}
@@ -344,7 +365,7 @@ export default function ConfirmOrderScreen() {
                       />
                       {weightRaw.length > 0 && (
                         <TouchableOpacity
-                          style={tw`ml-2`}
+                          style={tw`absolute right-3 top-1/2 -translate-y-1/2`}
                           onPress={() => setWeightRaw("")}
                         >
                           <Ionicons
@@ -387,9 +408,9 @@ export default function ConfirmOrderScreen() {
                       ))}
                     </View>
                     {selectedCategory === "Khác" && (
-                      <View style={tw`flex-row items-center mt-2`}>
+                      <View style={tw`flex-row items-center mt-2 relative`}>
                         <TextInput
-                          style={tw`flex-1 border border-gray-300 rounded-lg px-3 py-2 text-base text-black`}
+                          style={tw`flex-1 border border-gray-300 rounded-lg px-3 py-2 text-base text-black pr-10`}
                           placeholder="Nhập loại hàng hóa khác"
                           placeholderTextColor="#6B6B6B"
                           value={otherCategory}
@@ -397,7 +418,7 @@ export default function ConfirmOrderScreen() {
                         />
                         {otherCategory.length > 0 && (
                           <TouchableOpacity
-                            style={tw`ml-2`}
+                            style={tw`absolute right-3`}
                             onPress={() => setOtherCategory("")}
                           >
                             <Ionicons
