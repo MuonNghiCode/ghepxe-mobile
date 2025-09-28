@@ -1,224 +1,175 @@
 import React from "react";
-import { Text, View, Image, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Image } from "react-native";
 import tw from "twrnc";
 import { Ionicons } from "@expo/vector-icons";
 
-interface OrderCardProps {
-  order: {
-    id: string;
-    customerName?: string;
-    rating?: number;
-    requestTime?: string;
-    pickup: {
-      address: string;
-      details: string;
-    };
-    delivery: {
-      address: string;
-      distance?: string;
-    };
-    price: string;
-    co2Reduction?: string;
-    status: string;
-    serviceType: "single" | "shared";
-  };
-  onAccept?: (orderId: string) => void;
-  onContact?: (orderId: string) => void;
-  showCustomerInfo?: boolean;
-  variant?: "suggestion" | "current";
-}
+type OrderCardProps = {
+  productImage: any;
+  productName: string;
+  quantity: number;
+  weight: string;
+  price: string | number;
+  pickupAddress: string;
+  deliveryAddress: string;
+  status: "pending" | "picking" | "review" | "cancelled";
+  headerText?: string;
+  tagText?: string;
+  onReview?: () => void;
+  showMore?: boolean;
+  onPress?: () => void;
+};
+
+const STATUS_CONFIG = {
+  pending: {
+    icon: "person-outline",
+    header: "Đơn hàng của bạn đang chờ xác nhận",
+    tag: "Chờ xác nhận",
+    tagColor: "#FFB800",
+    tagBg: "bg-[#FFF7E6]",
+    showButton: false,
+  },
+  picking: {
+    icon: "person-outline",
+    header: "Thời gian lấy hàng ước tính 1 ngày",
+    tag: "Đang lấy hàng",
+    tagColor: "#00A982",
+    tagBg: "bg-[#E6F7F3]",
+    showButton: false,
+  },
+  review: {
+    icon: "cash-outline",
+    header: "Đánh giá dịch vụ để nhận 200 xu",
+    tag: "",
+    tagColor: "",
+    tagBg: "",
+    showButton: true,
+  },
+  cancelled: {
+    icon: "person-outline",
+    header: "Hoàn tiền thành công",
+    tag: "Đã huỷ",
+    tagColor: "#6B6B6B",
+    tagBg: "bg-gray-100",
+    showButton: false,
+  },
+};
 
 export default function OrderCard({
-  order,
-  onAccept,
-  onContact,
-  showCustomerInfo = true,
-  variant = "suggestion",
+  productImage,
+  productName,
+  quantity,
+  weight,
+  price,
+  pickupAddress,
+  deliveryAddress,
+  status,
+  headerText,
+  tagText,
+  onReview,
+  showMore,
+  onPress,
 }: OrderCardProps) {
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case "CHỜ XÁC NHẬN":
-        return "bg-orange-100 text-orange-600";
-      case "ĐANG GIAO":
-        return "bg-green-100 text-green-600";
-      default:
-        return "bg-gray-100 text-gray-600";
-    }
-  };
-
-  const getServiceInfo = (serviceType: string) => {
-    switch (serviceType) {
-      case "single":
-        return {
-          icon: "cube-outline",
-          name: "Đơn lẻ",
-          bgColor: "bg-blue-100",
-          iconColor: "#3B82F6",
-        };
-      case "shared":
-        return {
-          icon: "albums-outline",
-          name: "Đơn ghép",
-          bgColor: "bg-purple-100",
-          iconColor: "#8B5CF6",
-        };
-      default:
-        return {
-          icon: "cube-outline",
-          name: "Đơn lẻ",
-          bgColor: "bg-blue-100",
-          iconColor: "#3B82F6",
-        };
-    }
-  };
-
-  const getTimeNote = (status: string, requestTime: string) => {
-    switch (status) {
-      case "CHỜ XÁC NHẬN":
-        return `Yêu cầu: ${requestTime}`;
-      case "ĐANG GIAO":
-        return `Đã nhận: ${requestTime}`;
-      default:
-        return `Yêu cầu: ${requestTime}`;
-    }
-  };
-
-  const serviceInfo = getServiceInfo(order.serviceType);
-
-  const shadowStyle = {
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  };
+  const config = STATUS_CONFIG[status];
 
   return (
-    <View style={[tw`bg-white rounded-xl p-4 mb-3`, shadowStyle]}>
-      <View style={tw`flex-row items-center justify-between mb-3`}>
-        <View style={tw`flex-row items-center flex-1`}>
-          <View
-            style={tw`w-10 h-10 ${serviceInfo.bgColor} rounded-full items-center justify-center mr-3`}
+    <TouchableOpacity
+      activeOpacity={0.93}
+      onPress={onPress}
+      style={tw`bg-white rounded-2xl shadow px-0 py-0 mb-4`}
+    >
+      {/* Header */}
+      <View style={tw`flex-row items-center justify-between px-4 pt-4 pb-2`}>
+        <View style={tw`flex-row items-center`}>
+          <Ionicons name={config.icon as any} size={18} color="#6B6B6B" />
+          <Text style={tw`ml-2 text-xs text-gray-700`}>
+            {headerText || config.header}
+          </Text>
+        </View>
+        {config.showButton ? (
+          <TouchableOpacity
+            style={tw`bg-[#00A982] rounded-full px-4 py-1`}
+            onPress={onReview}
           >
-            <Ionicons
-              name={serviceInfo.icon as any}
-              size={20}
-              color={serviceInfo.iconColor}
-            />
-          </View>
-          <View style={tw`flex-1`}>
-            <Text style={tw`font-semibold text-gray-800 text-base`}>
-              {serviceInfo.name}
+            <Text style={tw`text-white text-xs font-semibold`}>
+              Đánh giá ngay
             </Text>
-            {order.requestTime && (
-              <Text style={tw`text-xs text-gray-500`}>
-                {getTimeNote(order.status, order.requestTime)}
-              </Text>
+          </TouchableOpacity>
+        ) : tagText || config.tag ? (
+          <Text
+            style={tw.style(
+              "px-3 py-1 rounded-full text-xs font-semibold",
+              config.tagBg
             )}
-          </View>
-        </View>
-        <View
-          style={tw`px-3 py-1 rounded-full ${getStatusStyle(order.status)}`}
-        >
-          <Text style={tw`text-xs font-semibold`}>{order.status}</Text>
-        </View>
-      </View>
-      <View style={tw`flex-row items-center mb-3`}>
-        <View
-          style={tw`w-6 h-6 bg-green-100 rounded-lg items-center justify-center mr-2`}
-        >
-          <Ionicons name="cube-outline" size={14} color="#00A982" />
-        </View>
-        <Text style={tw`text-xs text-gray-600 flex-1`} numberOfLines={1}>
-          {order.pickup.details}
-        </Text>
-      </View>
-      <View style={tw`mb-3`}>
-        <View style={tw`flex-row items-center mb-2 bg-gray-50 p-3 rounded-lg`}>
-          <View style={tw`flex-1`}>
-            <Text
-              style={tw`font-semibold text-gray-800 text-sm`}
-              numberOfLines={1}
-            >
-              {order.pickup.address}
+          >
+            <Text style={{ color: config.tagColor }}>
+              {tagText || config.tag}
             </Text>
-          </View>
-          <View style={tw`items-center mx-3`}>
-            {order.delivery.distance && (
-              <Text style={tw`text-xs text-gray-500 mb-1`}>
-                {order.delivery.distance}
-              </Text>
-            )}
-            <View style={tw`flex-row items-center`}>
-              <View style={tw`w-2 h-2 bg-[#00A982] rounded-full`} />
-              <View style={tw`w-6 h-px bg-[#00A982] mx-1`} />
-              <Ionicons name="arrow-forward" size={12} color="#00A982" />
+          </Text>
+        ) : null}
+      </View>
+      {/* Sản phẩm */}
+      <View style={tw`flex-row items-center px-4 pt-3 pb-2`}>
+        <Image
+          source={productImage}
+          style={tw`w-12 h-12 rounded mr-3`}
+          resizeMode="cover"
+        />
+        <View style={tw`flex-1`}>
+          <Text
+            style={tw`font-semibold text-black text-base`}
+            numberOfLines={1}
+          >
+            {productName}
+          </Text>
+          <View style={tw`flex-row items-center mt-1`}>
+            <Text style={tw`text-xs text-gray-500`}>Số lượng: {quantity}</Text>
+            <View style={tw`bg-[#00A982] rounded px-2 py-0.5 ml-2`}>
+              <Text style={tw`text-xs text-white`}>{weight}</Text>
             </View>
           </View>
-          <View style={tw`flex-1`}>
-            <Text
-              style={tw`font-semibold text-gray-800 text-sm`}
-              numberOfLines={1}
-            >
-              {order.delivery.address}
-            </Text>
-          </View>
+          {showMore && (
+            <TouchableOpacity>
+              <Text style={tw`text-xs text-[#007AFF] font-semibold mt-1`}>
+                + XEM THÊM
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
+        <Text style={tw`text-base text-gray-700 font-semibold`}>{price}</Text>
       </View>
-      <View style={tw`flex-row justify-between items-center mb-3`}>
+      <View style={tw`border-b border-gray-100 mx-4`} />
+      {/* Địa chỉ */}
+      <View style={tw`px-4 py-2`}>
+        <View style={tw`flex-row items-center mb-1`}>
+          <View
+            style={tw`w-4 h-4 rounded bg-gray-300 items-center justify-center`}
+          >
+            <Ionicons name="stop-outline" size={14} color="#6B6B6B" />
+          </View>
+          <Text style={tw`ml-2 text-sm text-gray-800`} numberOfLines={1}>
+            {pickupAddress}
+          </Text>
+        </View>
         <View style={tw`flex-row items-center`}>
-          <Text style={tw`text-sm text-gray-600 mr-1`}>Thu nhập:</Text>
-          <Text style={tw`text-lg font-bold text-green-600`}>
-            {order.price}
-          </Text>
-        </View>
-
-        {order.co2Reduction && (
-          <View style={tw`flex-row items-center`}>
-            <Ionicons name="sync-outline" size={14} color="#00A982" />
-            <Text
-              style={tw`text-xs text-[#00A982] ml-1 font-medium`}
-              numberOfLines={1}
-            >
-              Giảm 12kg CO₂
-            </Text>
+          <View
+            style={tw`w-4 h-4 rounded bg-[#00A982] items-center justify-center`}
+          >
+            <Ionicons name="arrow-down-outline" size={14} color="#fff" />
           </View>
-        )}
-      </View>
-      {order.status === "CHỜ XÁC NHẬN" && (
-        <View style={tw`flex-row gap-2`}>
-          <TouchableOpacity
-            style={tw`flex-1 bg-[#00A982] rounded-lg py-3`}
-            onPress={() => onAccept?.(order.id)}
-          >
-            <Text style={tw`text-white text-center font-semibold text-sm`}>
-              Nhận đơn
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={tw`flex-1 border border-[#00A982] rounded-lg py-3`}
-            onPress={() => onContact?.(order.id)}
-          >
-            <Text style={tw`text-[#00A982] text-center font-semibold text-sm`}>
-              Liên hệ
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {order.status === "ĐANG GIAO" && (
-        <TouchableOpacity
-          style={tw`bg-[#00A982] rounded-lg py-3`}
-          onPress={() => onAccept?.(order.id)}
-        >
-          <Text style={tw`text-white text-center font-semibold text-sm`}>
-            Cập nhật
+          <Text style={tw`ml-2 text-sm text-gray-800`} numberOfLines={1}>
+            {deliveryAddress}
           </Text>
-        </TouchableOpacity>
-      )}
-    </View>
+        </View>
+      </View>
+      {/* Footer: tổng kết */}
+      <View
+        style={tw`flex-row items-center justify-between px-4 py-2 border-t border-gray-100`}
+      >
+        <Text style={tw`text-xs text-gray-500`}>
+          Số lượng: {quantity} | {weight} | {price}
+        </Text>
+        <Ionicons name="chevron-forward" size={18} color="#C4C4C4" />
+      </View>
+    </TouchableOpacity>
   );
 }

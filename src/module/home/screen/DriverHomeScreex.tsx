@@ -10,8 +10,8 @@ import {
 } from "react-native";
 import tw from "twrnc";
 import { Ionicons } from "@expo/vector-icons";
-import OrderCard from "@components/OrderCard";
 import { useNavigation } from "@react-navigation/native";
+import OrderStatusCard from "@components/OrderStatusCard";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -223,7 +223,7 @@ export default function DriverHomeScreen() {
                     </View>
                   ) : (
                     currentOrders.map((order) => (
-                      <OrderCard
+                      <OrderStatusCard
                         key={order.id}
                         order={order}
                         onAccept={handleAcceptOrder}
@@ -262,7 +262,7 @@ export default function DriverHomeScreen() {
                     </View>
                   ) : (
                     suggestedOrdersOnly.map((order) => (
-                      <OrderCard
+                      <OrderStatusCard
                         key={order.id}
                         order={order}
                         onAccept={handleAcceptOrder}
