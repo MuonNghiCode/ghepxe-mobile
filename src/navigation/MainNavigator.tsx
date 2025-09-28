@@ -1,9 +1,9 @@
 import { useAuth } from "@context/AuthContext";
-import { UserTabNavigator } from "./UserTabNavigator";
-import { DriverTabNavigator } from "./DriverTabNavigator";
+import UserStackNavigator from "./user/UserStackNavigator";
+import DriverStackNavigator from "./driver/DriverStackNavigator";
 
 export default function MainNavigator() {
   const { role } = useAuth();
 
-  return role === "user" ? <UserTabNavigator /> : <DriverTabNavigator />;
+  return role === "user" ? <UserStackNavigator /> : <DriverStackNavigator />;
 }
