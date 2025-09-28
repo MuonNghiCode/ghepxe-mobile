@@ -17,6 +17,7 @@ export type UserTabParamList = {
   ConfirmOrder: undefined;
   OrderBilling: undefined;
   OrderShipping: undefined;
+  Matching: undefined;
 };
 
 export type RootStackParamList = {

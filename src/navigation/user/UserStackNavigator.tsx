@@ -9,7 +9,9 @@ import {
 import {
   ConfirmOrderScreen,
   OrderBillingAddressScreen,
+  OrderShippingAddressScreen,
 } from "src/module/orders";
+import { MatchingRouteScreen } from "src/module/match";
 
 const Stack = createNativeStackNavigator<UserTabParamList>();
 
@@ -22,6 +24,11 @@ export default function UserStackNavigator() {
       <Stack.Screen name="MapSelect" component={MapSelectScreen} />
       <Stack.Screen name="ConfirmOrder" component={ConfirmOrderScreen} />
       <Stack.Screen name="OrderBilling" component={OrderBillingAddressScreen} />
+      <Stack.Screen
+        name="OrderShipping"
+        component={OrderShippingAddressScreen}
+      />
+      <Stack.Screen name="Matching" component={MatchingRouteScreen} />
     </Stack.Navigator>
   );
 }

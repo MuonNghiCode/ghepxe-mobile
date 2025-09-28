@@ -82,6 +82,10 @@ export default function ConfirmOrderScreen() {
     navigation.navigate("OrderShipping" as never);
   }, [navigation]);
 
+  const handleMatchRoute = useCallback(() => {
+    navigation.navigate("Matching" as never);
+  }, [navigation]);
+
   return (
     <SafeAreaView style={tw`flex-1 bg-white`}>
       {/* Header */}
@@ -110,7 +114,7 @@ export default function ConfirmOrderScreen() {
       >
         <View style={{ position: "relative", minHeight: 1200 }}>
           {/* ParticleBackground phủ toàn bộ content của ScrollView */}
-          <ParticleBackground count={10} height={1500} />
+          {/* <ParticleBackground count={10} height={1500} /> */}
 
           {/* Các View nội dung đặt phía trên, có zIndex cao hơn */}
           <View style={{ position: "relative", zIndex: 1 }}>
@@ -638,6 +642,8 @@ export default function ConfirmOrderScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={tw`flex-1 bg-white border border-[#00A982] py-3 rounded-xl ml-2`}
+            onPress={handleMatchRoute}
+            activeOpacity={0.8}
           >
             <Text style={tw`text-[#00A982] text-center font-bold text-base`}>
               Tìm chuyến
