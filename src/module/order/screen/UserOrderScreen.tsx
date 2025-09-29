@@ -113,6 +113,13 @@ type UserOrderScreenNavigationProp = NativeStackNavigationProp<
   "UserOrder"
 >;
 
+const statusMap = {
+  pending: "waiting",
+  picking: "delivering",
+  review: "delivered",
+  cancelled: "cancelled",
+};
+
 export default function UserOrderScreen() {
   const [tab, setTab] = useState("ongoing");
   const navigation = useNavigation<UserOrderScreenNavigationProp>();
@@ -127,7 +134,10 @@ export default function UserOrderScreen() {
 
   const handleCardPress = useCallback(
     (order: Order) => {
-      navigation.navigate("OrderDetail", { order } as never);
+      navigation.navigate("OrderDetail", {
+        ...order,
+        orderStatus: statusMap[order.status], // luôn có orderStatus
+      } as never);
     },
     [navigation]
   );
@@ -155,14 +165,13 @@ export default function UserOrderScreen() {
                   ? "bg-[#00A982] text-white"
                   : "bg-gray-100 text-gray-700"
               )}
+              numberOfLines={1}
+              ellipsizeMode="tail"
             >
               {item.label}
             </Text>
           </TouchableOpacity>
         ))}
-        <TouchableOpacity style={tw`ml-auto`}>
-          <Ionicons name="refresh" size={20} color="#00A982" />
-        </TouchableOpacity>
       </View>
       {/* Content */}
       <ScrollView style={tw`flex-1`} contentContainerStyle={tw`pt-2 pb-8 px-4`}>

@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
 import tw from "twrnc";
-import { Ionicons } from "@expo/vector-icons";
+import { Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 type OrderCardProps = {
   productImage: any;
@@ -21,7 +21,7 @@ type OrderCardProps = {
 
 const STATUS_CONFIG = {
   pending: {
-    icon: "person-outline",
+    icon: "hourglass",
     header: "Đơn hàng của bạn đang chờ xác nhận",
     tag: "Chờ xác nhận",
     tagColor: "#FFB800",
@@ -29,7 +29,7 @@ const STATUS_CONFIG = {
     showButton: false,
   },
   picking: {
-    icon: "person-outline",
+    icon: "hourglass",
     header: "Thời gian lấy hàng ước tính 1 ngày",
     tag: "Đang lấy hàng",
     tagColor: "#00A982",
@@ -39,13 +39,13 @@ const STATUS_CONFIG = {
   review: {
     icon: "cash-outline",
     header: "Đánh giá dịch vụ để nhận 200 xu",
-    tag: "",
-    tagColor: "",
-    tagBg: "",
+    tag: "Chờ đánh giá",
+    tagColor: "#00A982",
+    tagBg: "bg-[#E6F7F3]",
     showButton: true,
   },
   cancelled: {
-    icon: "person-outline",
+    icon: "return-up-back",
     header: "Hoàn tiền thành công",
     tag: "Đã huỷ",
     tagColor: "#6B6B6B",
@@ -81,31 +81,43 @@ export default function OrderCard({
       <View style={tw`flex-row items-center justify-between px-4 pt-4 pb-2`}>
         <View style={tw`flex-row items-center`}>
           <Ionicons name={config.icon as any} size={18} color="#6B6B6B" />
-          <Text style={tw`ml-2 text-xs text-gray-700`}>
+          <Text
+            style={tw`ml-2 text-xs text-gray-700`}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {headerText || config.header}
           </Text>
         </View>
         {config.showButton ? (
           <TouchableOpacity
-            style={tw`bg-[#00A982] rounded-full px-4 py-1`}
+            style={tw`bg-[#00A982] rounded-full px-3 py-1`}
             onPress={onReview}
           >
-            <Text style={tw`text-white text-xs font-semibold`}>
+            <Text
+              style={tw`text-white text-xs font-semibold`}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               Đánh giá ngay
             </Text>
           </TouchableOpacity>
-        ) : tagText || config.tag ? (
-          <Text
-            style={tw.style(
-              "px-3 py-1 rounded-full text-xs font-semibold",
-              config.tagBg
-            )}
-          >
-            <Text style={{ color: config.tagColor }}>
-              {tagText || config.tag}
+        ) : (
+          (tagText || config.tag) && (
+            <Text
+              style={tw.style(
+                "px-3 py-1 rounded-full text-xs font-semibold",
+                config.tagBg
+              )}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              <Text style={{ color: config.tagColor }}>
+                {tagText || config.tag}
+              </Text>
             </Text>
-          </Text>
-        ) : null}
+          )
+        )}
       </View>
       {/* Sản phẩm */}
       <View style={tw`flex-row items-center px-4 pt-3 pb-2`}>
@@ -135,9 +147,14 @@ export default function OrderCard({
       <View style={tw`px-4 py-2`}>
         <View style={tw`flex-row items-center mb-1`}>
           <View
-            style={tw`w-4 h-4 rounded bg-gray-300 items-center justify-center`}
+            style={tw`w-4 h-4 rounded-full bg-black items-center justify-center`}
           >
-            <Ionicons name="stop-outline" size={14} color="#6B6B6B" />
+            <MaterialCommunityIcons
+              name="stop"
+              size={12}
+              color="white"
+              style={tw`bg-black rounded-full `}
+            />
           </View>
           <Text style={tw`ml-2 text-sm text-gray-800`} numberOfLines={1}>
             {pickupAddress}
@@ -145,9 +162,14 @@ export default function OrderCard({
         </View>
         <View style={tw`flex-row items-center`}>
           <View
-            style={tw`w-4 h-4 rounded bg-[#00A982] items-center justify-center`}
+            style={tw`w-4 h-4 rounded-full bg-[#00A982] items-center justify-center`}
           >
-            <Ionicons name="arrow-down-outline" size={14} color="#fff" />
+            <Entypo
+              name="arrow-down"
+              size={12}
+              color="#fff"
+              style={tw`bg-[#00A982] rounded-full `}
+            />
           </View>
           <Text style={tw`ml-2 text-sm text-gray-800`} numberOfLines={1}>
             {deliveryAddress}
