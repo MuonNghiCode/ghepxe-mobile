@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import tw from "twrnc";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import OrderCard from "../../../components/OrderCard";
+import { UserTabParamList } from "src/navigation/type";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 const TABS = [
   { key: "ongoing", label: "ĐANG DIỄN RA" },
@@ -106,15 +108,15 @@ interface Order {
   tag: string;
 }
 
-interface HandleCardPressParams {
-  order: Order;
-}
+type UserOrderScreenNavigationProp = NativeStackNavigationProp<
+  UserTabParamList,
+  "UserOrder"
+>;
 
 export default function UserOrderScreen() {
   const [tab, setTab] = useState("ongoing");
-  const navigation = useNavigation();
+  const navigation = useNavigation<UserOrderScreenNavigationProp>();
 
-  // Lọc đơn theo trạng thái tab
   const filteredOrders = orders.filter((order) => {
     if (tab === "ongoing")
       return order.status === "pending" || order.status === "picking";
@@ -123,9 +125,12 @@ export default function UserOrderScreen() {
     return true;
   });
 
-  const handleCardPress = (order: Order) => {
-    navigation.navigate("OrderDetailScreen", { order });
-  };
+  const handleCardPress = useCallback(
+    (order: Order) => {
+      navigation.navigate("OrderDetail", { order } as never);
+    },
+    [navigation]
+  );
 
   return (
     <View style={tw`flex-1 bg-gray-100`}>

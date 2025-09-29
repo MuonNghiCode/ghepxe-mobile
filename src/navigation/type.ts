@@ -9,6 +9,7 @@ export type AuthStackParamList = {
 export type DriverTabParamList = {
   DriverTabs: undefined;
 };
+
 export type UserTabParamList = {
   Billing: undefined;
   UserTabs: undefined;
@@ -19,6 +20,8 @@ export type UserTabParamList = {
   OrderShipping: undefined;
   Matching: undefined;
   OrderDetail: undefined;
+  Order: { order: any };
+  UserOrder: undefined;
 };
 
 export type RootStackParamList = {
@@ -38,6 +41,7 @@ export type RootStackParamList = {
       coords: any;
       address: string;
     };
-  }
+  };
+
 };
 

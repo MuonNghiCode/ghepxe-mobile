@@ -127,13 +127,6 @@ export default function OrderCard({
               <Text style={tw`text-xs text-white`}>{weight}</Text>
             </View>
           </View>
-          {showMore && (
-            <TouchableOpacity>
-              <Text style={tw`text-xs text-[#007AFF] font-semibold mt-1`}>
-                + XEM THÊM
-              </Text>
-            </TouchableOpacity>
-          )}
         </View>
         <Text style={tw`text-base text-gray-700 font-semibold`}>{price}</Text>
       </View>
