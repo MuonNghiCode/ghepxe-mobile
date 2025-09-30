@@ -136,7 +136,7 @@ export default function UserOrderScreen() {
     (order: Order) => {
       navigation.navigate("OrderDetail", {
         ...order,
-        orderStatus: statusMap[order.status], // luôn có orderStatus
+        orderStatus: statusMap[order.status],
       } as never);
     },
     [navigation]

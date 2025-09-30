@@ -233,11 +233,8 @@ export default function OrderDetailScreen() {
 
       {/* ScrollView nội dung, KHÔNG absolute */}
       <ScrollView
-        style={[
-          tw`bg-gray-200 rounded-t-3xl`,
-          { marginTop: -100 }, // để đè lên map, bo góc trên
-        ]}
-        contentContainerStyle={tw`pb-15`} // padding bottom lớn hơn chiều cao nút action
+        style={[tw`bg-gray-200 rounded-t-3xl`, { marginTop: -100 }]}
+        contentContainerStyle={tw`pb-15`}
         showsVerticalScrollIndicator={false}
       >
         {/* Trạng thái đơn hàng + icon */}

@@ -4,47 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import tw from "twrnc";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import MatchingRouteCard from "../components/MatchingRouteCard";
-
-const mockRoutes = [
-  {
-    id: "1",
-    avatar: "https://i.pravatar.cc/100?img=1",
-    driverName: "Phạm Minh Quân",
-    rating: 5,
-    from: "TP. Hồ Chí Minh",
-    to: "TP. Vũng Tàu",
-    vehicle: "Xe tải",
-    goods: "Quần áo · 8kg",
-    size: "35x25x15cm",
-    discount: 12,
-  },
-  {
-    id: "2",
-    avatar: "https://i.pravatar.cc/100?img=1",
-    driverName: "Phạm Minh Quân",
-    rating: 5,
-    from: "TP. Hồ Chí Minh",
-    to: "TP. Vũng Tàu",
-    vehicle: "Xe tải",
-    goods: "Quần áo · 8kg",
-    size: "35x25x15cm",
-    discount: 12,
-  },
-  {
-    id: "3",
-    avatar: "https://i.pravatar.cc/100?img=1",
-    driverName: "Phạm Minh Quân",
-    rating: 5,
-    from: "TP. Hồ Chí Minh",
-    to: "TP. Vũng Tàu",
-    vehicle: "Xe tải",
-    goods: "Quần áo · 8kg",
-    size: "35x25x15cm",
-    discount: 12,
-  },
-  // ...thêm các chuyến khác nếu muốn
-];
+import mockRoutes from "src/constants/mockRouter";
+import RouteCard from "src/module/match/components/MatchingRouteCard";
 
 export default function MatchingRouteScreen() {
   const navigation = useNavigation();
@@ -95,7 +56,7 @@ export default function MatchingRouteScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={tw`px-4 pt-4 pb-4 bg-[#F8FFFE]`}
           renderItem={({ item }) => (
-            <MatchingRouteCard
+            <RouteCard
               route={item}
               onContact={() => {
                 /* xử lý liên hệ */
