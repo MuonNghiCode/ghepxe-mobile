@@ -12,7 +12,7 @@ import {
   OrderShippingAddressScreen,
 } from "src/module/orders";
 import { MatchingRouteScreen } from "src/module/match";
-import { OrderDetailScreen } from "src/module/order";
+import { UserOrderDetailScreen } from "src/module/order";
 
 const Stack = createNativeStackNavigator<UserTabParamList>();
 
@@ -30,7 +30,7 @@ export default function UserStackNavigator() {
         component={OrderShippingAddressScreen}
       />
       <Stack.Screen name="Matching" component={MatchingRouteScreen} />
-      <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
+      <Stack.Screen name="UserOrderDetail" component={UserOrderDetailScreen} />
     </Stack.Navigator>
   );
 }

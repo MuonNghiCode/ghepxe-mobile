@@ -3,9 +3,10 @@ import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import tw from "twrnc";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import OrderCard from "../../../components/OrderCard";
+
 import { UserTabParamList } from "src/navigation/type";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import UserOrderCard from "@components/UserOrderCard";
 
 const TABS = [
   { key: "ongoing", label: "ĐANG DIỄN RA" },
@@ -134,7 +135,7 @@ export default function UserOrderScreen() {
 
   const handleCardPress = useCallback(
     (order: Order) => {
-      navigation.navigate("OrderDetail", {
+      navigation.navigate("UserOrderDetail", {
         ...order,
         orderStatus: statusMap[order.status],
       } as never);
@@ -176,7 +177,7 @@ export default function UserOrderScreen() {
       {/* Content */}
       <ScrollView style={tw`flex-1`} contentContainerStyle={tw`pt-2 pb-8 px-4`}>
         {filteredOrders.map((order) => (
-          <OrderCard
+          <UserOrderCard
             key={order.id}
             status={order.status}
             productImage={order.productImage}

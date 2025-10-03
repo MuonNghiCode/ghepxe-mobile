@@ -19,7 +19,7 @@ export type UserTabParamList = {
   OrderBilling: undefined;
   OrderShipping: undefined;
   Matching: undefined;
-  OrderDetail: undefined;
+  UserOrderDetail: undefined;
   Order: { order: any };
   UserOrder: undefined;
 };

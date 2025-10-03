@@ -54,7 +54,7 @@ const STATUS_CONFIG = {
   },
 };
 
-export default function OrderCard({
+export default function UserOrderCard({
   productImage,
   productName,
   quantity,
