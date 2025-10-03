@@ -32,11 +32,14 @@ type ShippingAddressNavigationProp = NativeStackNavigationProp<
 >;
 
 const SAVED_ADDRESSES: AddressItemType[] = [
-  { id: 1, title: "XV44+7R Thành Phố XXX", subtitle: "Tỉnh XXX, Vietnam" },
-  { id: 2, title: "XV44+7R Thành Phố XXX", subtitle: "Tỉnh XXX, Vietnam" },
-  { id: 3, title: "XV44+7R Thành Phố XXX", subtitle: "Tỉnh XXX, Vietnam" },
+  {
+    id: 1,
+    title: "72 Lê Thánh Tôn, Bến Nghé",
+    subtitle: "Quận 1, TP. Hồ Chí Minh, Vietnam",
+  },
+  { id: 2, title: "1 Đại Cồ Việt", subtitle: "Hai Bà Trưng, Hà Nội, Vietnam" },
+  { id: 3, title: "02 Trường Sa", subtitle: "Ngũ Hành Sơn, Đà Nẵng, Vietnam" },
 ];
-
 const HELP_ITEMS: HelpItemType[] = [
   {
     id: 1,
@@ -167,7 +170,7 @@ export default function ShippingAddress() {
   }, [navigation]);
 
   const handleCurrentLocation = useCallback(() => {
-    console.log("Nghiệp vụ khác khi lấy vị trí hiện tại");
+    navigation.navigate("ConfirmOrder" as never);
   }, []);
 
   const handleAddNew = useCallback(() => {

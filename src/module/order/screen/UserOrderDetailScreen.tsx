@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,44 +16,21 @@ import {
 } from "@expo/vector-icons";
 import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import MapView, { Marker } from "react-native-maps";
-
-type OrderStatus = "waiting" | "delivering" | "delivered" | "cancelled";
-
-type Order = {
-  productImage: any;
-  productName: string;
-  quantity: number;
-  weight: string | number;
-  price: string | number;
-  pickupAddress: string;
-  deliveryAddress: string;
-  orderStatus: OrderStatus;
-  // Add other fields if needed
-};
+import MapView, { Marker, Polyline } from "react-native-maps";
+import {
+  Order,
+  OrderStatus,
+  StatusConfig,
+  OrderItem,
+  UserOrderDetailScreenParams,
+  Coordinate,
+} from "src/types/order.interface";
+import { LOCATIONIQ_API_KEY } from "@env";
 
 type UserOrderDetailScreenRouteProp = RouteProp<
-  { params: { order: Order } },
+  { params: UserOrderDetailScreenParams },
   "params"
 >;
-
-type StatusConfig = {
-  header: string;
-  icon: string;
-  headerColor: string;
-  showCancel: boolean;
-  showReport: boolean;
-  showReorder: boolean;
-  showChat: boolean;
-  showCall: boolean;
-  statusText: string;
-  statusColor: string;
-  statusBg: string;
-  buttonText: string;
-  buttonColor: string;
-  reportText?: string;
-  reportColor?: string;
-};
 
 const STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
   waiting: {
@@ -123,9 +100,8 @@ const STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
 };
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const MAP_HEIGHT = SCREEN_HEIGHT * 0.45; // tăng chiều cao map
+const MAP_HEIGHT = SCREEN_HEIGHT * 0.45;
 
-// Thêm ánh xạ trạng thái sang ảnh
 const STATUS_IMAGE = {
   waiting: require("../../../assets/icons/pending.png"),
   delivering: require("../../../assets/icons/pending.png"),
@@ -133,14 +109,40 @@ const STATUS_IMAGE = {
   cancelled: require("../../../assets/icons/cancelled.png"),
 };
 
+const calculateDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+) => {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 export default function UserOrderDetailScreen() {
   const route = useRoute<UserOrderDetailScreenRouteProp>();
   const order = route.params?.order || route.params;
   const config = STATUS_CONFIG[order.orderStatus || "waiting"];
   const navigation = useNavigation();
+  const mapRef = useRef<MapView>(null);
+  const [routeCoordinates, setRouteCoordinates] = useState<any[]>([]);
+  const [distance, setDistance] = useState<string>("");
+  const [duration, setDuration] = useState<string>("");
 
-  // Mock data cho các phần còn lại
-  const driver = { name: "Phạm Minh Quân", phone: "098.xxxx.xxx" };
+  const driver = {
+    name: "Phạm Minh Quân",
+    phone: "098.xxx.xxxx",
+  };
+
   const items = [
     {
       name: "Paracetamol-Ratiopharm 500mg Tabletten 20 ST",
@@ -166,6 +168,208 @@ export default function UserOrderDetailScreen() {
     navigation.goBack();
   }, [navigation]);
 
+  const getDirections = useCallback(async () => {
+    try {
+      const origin = `${order.pickupLongitude},${order.pickupLatitude}`;
+      const destination = `${order.deliveryLongitude},${order.deliveryLatitude}`;
+
+      const waypoints = getVietnameseWaypoints(
+        order.pickupLatitude,
+        order.pickupLongitude,
+        order.deliveryLatitude,
+        order.deliveryLongitude
+      );
+
+      let url;
+      if (waypoints.length > 0) {
+        const waypointStr = waypoints
+          .map((wp) => `${wp.longitude},${wp.latitude}`)
+          .join(";");
+        url = `https://us1.locationiq.com/v1/directions/driving/${origin};${waypointStr};${destination}?key=${LOCATIONIQ_API_KEY}&steps=true&geometries=geojson&overview=full&exclude=ferry`;
+      } else {
+        url = `https://us1.locationiq.com/v1/directions/driving/${origin};${destination}?key=${LOCATIONIQ_API_KEY}&steps=true&geometries=geojson&overview=full&exclude=ferry`;
+      }
+
+      console.log("API URL:", url);
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      console.log("API Response:", JSON.stringify(data, null, 2));
+
+      if (data.routes && data.routes.length > 0) {
+        const route = data.routes[0];
+
+        const distanceKm = (route.distance / 1000).toFixed(1);
+        const durationHours = route.duration / 3600;
+
+        let durationText;
+        if (durationHours >= 1) {
+          const hours = Math.floor(durationHours);
+          const minutes = Math.round((durationHours - hours) * 60);
+          durationText = minutes > 0 ? `${hours}h ${minutes}p` : `${hours}h`;
+        } else {
+          const minutes = Math.round(durationHours * 60);
+          durationText = `${minutes} phút`;
+        }
+
+        setDistance(`${distanceKm} km`);
+        setDuration(durationText);
+
+        const coordinates = route.geometry.coordinates.map(
+          (coord: number[]) => ({
+            latitude: coord[1],
+            longitude: coord[0],
+          })
+        );
+
+        setRouteCoordinates(coordinates);
+      } else {
+        console.log("No routes found, using simplified route");
+        createVietnameseRoute();
+      }
+    } catch (error) {
+      console.error("Error fetching directions:", error);
+      createVietnameseRoute();
+    }
+  }, [
+    order.pickupLatitude,
+    order.pickupLongitude,
+    order.deliveryLatitude,
+    order.deliveryLongitude,
+  ]);
+
+  const getVietnameseWaypoints = (
+    fromLat: number,
+    fromLng: number,
+    toLat: number,
+    toLng: number
+  ) => {
+    const waypoints = [];
+
+    const distance = Math.abs(fromLat - toLat);
+
+    if (distance > 5) {
+      if (fromLat > toLat) {
+        waypoints.push(
+          { latitude: 20.5, longitude: 106.0 },
+          { latitude: 18.5, longitude: 105.8 },
+          { latitude: 16.0, longitude: 108.2 },
+          { latitude: 14.0, longitude: 109.0 },
+          { latitude: 12.0, longitude: 109.2 }
+        );
+      } else {
+        waypoints.push(
+          { latitude: 12.0, longitude: 109.2 },
+          { latitude: 14.0, longitude: 109.0 },
+          { latitude: 16.0, longitude: 108.2 },
+          { latitude: 18.5, longitude: 105.8 },
+          { latitude: 20.5, longitude: 106.0 }
+        );
+      }
+    }
+
+    return waypoints;
+  };
+
+  const createVietnameseRoute = useCallback(() => {
+    const pickup = {
+      latitude: order.pickupLatitude,
+      longitude: order.pickupLongitude,
+    };
+    const delivery = {
+      latitude: order.deliveryLatitude,
+      longitude: order.deliveryLongitude,
+    };
+
+    const route1APoints = [
+      pickup,
+      { latitude: 20.5, longitude: 106.0 },
+      { latitude: 18.5, longitude: 105.8 },
+      { latitude: 16.0, longitude: 108.2 },
+      { latitude: 14.0, longitude: 109.0 },
+      { latitude: 12.0, longitude: 109.2 },
+      { latitude: 11.0, longitude: 108.0 },
+      delivery,
+    ];
+
+    const filteredPoints = route1APoints.filter((point) => {
+      if (pickup.latitude > delivery.latitude) {
+        return (
+          point.latitude <= pickup.latitude &&
+          point.latitude >= delivery.latitude
+        );
+      } else {
+        return (
+          point.latitude >= pickup.latitude &&
+          point.latitude <= delivery.latitude
+        );
+      }
+    });
+
+    setRouteCoordinates(filteredPoints);
+
+    let totalDistance = 0;
+    for (let i = 0; i < filteredPoints.length - 1; i++) {
+      totalDistance += calculateDistance(
+        filteredPoints[i].latitude,
+        filteredPoints[i].longitude,
+        filteredPoints[i + 1].latitude,
+        filteredPoints[i + 1].longitude
+      );
+    }
+
+    const estimatedHours = totalDistance / 50;
+
+    let durationText;
+    if (estimatedHours >= 1) {
+      const hours = Math.floor(estimatedHours);
+      const minutes = Math.round((estimatedHours - hours) * 60);
+      durationText = minutes > 0 ? `${hours}h ${minutes}p` : `${hours}h`;
+    } else {
+      const minutes = Math.round(estimatedHours * 60);
+      durationText = `${minutes} phút`;
+    }
+
+    setDistance(`${totalDistance.toFixed(0)} km`);
+    setDuration(durationText);
+  }, [order]);
+
+  const fitMapToCoordinatesWithRoute = useCallback(() => {
+    if (mapRef.current && routeCoordinates.length > 0) {
+      const coordinates =
+        routeCoordinates.length > 2
+          ? routeCoordinates
+          : [
+              {
+                latitude: order.pickupLatitude,
+                longitude: order.pickupLongitude,
+              },
+              {
+                latitude: order.deliveryLatitude,
+                longitude: order.deliveryLongitude,
+              },
+            ];
+
+      mapRef.current.fitToCoordinates(coordinates, {
+        edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
+        animated: true,
+      });
+    }
+  }, [routeCoordinates, order]);
+
+  useEffect(() => {
+    getDirections();
+  }, [getDirections]);
+
+  useEffect(() => {
+    if (routeCoordinates.length > 0) {
+      setTimeout(() => {
+        fitMapToCoordinatesWithRoute();
+      }, 1000);
+    }
+  }, [routeCoordinates, fitMapToCoordinatesWithRoute]);
+
   return (
     <SafeAreaView style={tw`flex-1 bg-white`}>
       {/* Header */}
@@ -185,30 +389,53 @@ export default function UserOrderDetailScreen() {
         <View style={tw`w-10 h-10`} />
       </View>
 
-      {/* Map */}
+      {/* Map với Polyline */}
       <View style={tw`w-full`}>
         <MapView
+          ref={mapRef}
           style={{ width: "100%", height: MAP_HEIGHT }}
-          initialRegion={{
-            latitude: 21.028511,
-            longitude: 105.804817,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }}
-          scrollEnabled={false}
-          zoomEnabled={false}
+          scrollEnabled={true}
+          zoomEnabled={true}
           pitchEnabled={false}
           rotateEnabled={false}
+          showsUserLocation={false}
+          showsMyLocationButton={false}
         >
+          {/* Marker điểm nhận */}
           <Marker
-            coordinate={{ latitude: 21.028511, longitude: 105.804817 }}
+            coordinate={{
+              latitude: order.pickupLatitude,
+              longitude: order.pickupLongitude,
+            }}
             pinColor="#000"
+            title="Điểm nhận"
+            description={order.pickupAddress}
           />
+
+          {/* Marker điểm giao */}
           <Marker
-            coordinate={{ latitude: 21.028511, longitude: 105.814817 }}
+            coordinate={{
+              latitude: order.deliveryLatitude,
+              longitude: order.deliveryLongitude,
+            }}
             pinColor="#00A982"
+            title="Điểm giao"
+            description={order.deliveryAddress}
           />
+
+          {/* Polyline đường đi với đường cong */}
+          {routeCoordinates.length > 0 && (
+            <Polyline
+              coordinates={routeCoordinates}
+              strokeColor="#00A982"
+              strokeWidth={4}
+              lineCap="round"
+              lineJoin="round"
+            />
+          )}
         </MapView>
+
+        {/* Icon trạng thái trên map */}
         <TouchableOpacity
           style={[
             tw`absolute right-4`,
@@ -223,12 +450,34 @@ export default function UserOrderDetailScreen() {
             },
           ]}
         >
-          <Ionicons
-            name={config.icon as any}
-            size={22}
-            color={config.headerColor}
+          <Image
+            source={STATUS_IMAGE[order.orderStatus || "waiting"]}
+            style={tw`w-6 h-6`}
+            resizeMode="contain"
           />
         </TouchableOpacity>
+
+        {/* Hiển thị distance và duration */}
+        {(distance || duration) && (
+          <View
+            style={[
+              tw`absolute left-4`,
+              {
+                bottom: 24,
+                backgroundColor: "#fff",
+                borderRadius: 12,
+                padding: 8,
+                shadowColor: "#000",
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+              },
+            ]}
+          >
+            <Text style={tw`text-xs font-semibold text-black`}>
+              {distance} • {duration}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* ScrollView nội dung, KHÔNG absolute */}
@@ -257,7 +506,7 @@ export default function UserOrderDetailScreen() {
           />
         </View>
 
-        {/* Mã đơn hàng + địa chỉ (chung 1 thành phần) */}
+        {/* Mã đơn hàng + địa chỉ với thông tin thực */}
         <View style={tw`bg-white px-4 py-4 mb-4 border-b border-gray-200`}>
           <View style={tw`flex-row items-center mb-2`}>
             <Text style={tw`font-semibold text-black text-sm`}>
@@ -269,9 +518,10 @@ export default function UserOrderDetailScreen() {
           </View>
           <Text style={tw`text-xs text-gray-500 mb-2`}>28/06/2025 | 21:54</Text>
           <Text style={tw`text-xs text-gray-500 mb-2`}>
-            1 điểm giao - 100km
+            1 điểm giao - {distance || "Đang tính..."} •{" "}
+            {duration || "Đang tính..."}
           </Text>
-          {/* Địa chỉ nhận */}
+          {/* Địa chỉ nhận với thông tin thực */}
           <View style={tw`flex-row items-center mb-3`}>
             <View
               style={tw`w-6 h-6 rounded-full bg-black items-center justify-center mr-2`}
@@ -285,15 +535,14 @@ export default function UserOrderDetailScreen() {
             </View>
             <View style={tw`flex-1 ml-2`}>
               <Text style={tw`font-semibold text-black`}>
-                XV44+7R Thành Phố X
+                {order.pickupAddress}
               </Text>
-              <Text style={tw`text-xs text-gray-500`}>Tỉnh X, Vietnam</Text>
               <Text style={tw`text-xs text-gray-500`}>
-                Nguyễn Văn A | 098xxxxxxx
+                {order.pickupContact} | {order.pickupPhone}
               </Text>
             </View>
           </View>
-          {/* Địa chỉ giao */}
+          {/* Địa chỉ giao với thông tin thực */}
           <View style={tw`flex-row items-center`}>
             <View
               style={tw`w-6 h-6 rounded-full bg-[#00A982] items-center justify-center mr-2`}
@@ -307,11 +556,10 @@ export default function UserOrderDetailScreen() {
             </View>
             <View style={tw`flex-1 ml-2`}>
               <Text style={tw`font-semibold text-black`}>
-                XV44+7R Thành Phố X
+                {order.deliveryAddress}
               </Text>
-              <Text style={tw`text-xs text-gray-500`}>Tỉnh X, Vietnam</Text>
               <Text style={tw`text-xs text-gray-500`}>
-                Nguyễn Văn B | 098xxxxxxx
+                {order.deliveryContact} | {order.deliveryPhone}
               </Text>
             </View>
           </View>

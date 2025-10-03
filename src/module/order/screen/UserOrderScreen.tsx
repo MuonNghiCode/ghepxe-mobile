@@ -1,12 +1,12 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import tw from "twrnc";
-import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-
-import { UserTabParamList } from "src/navigation/type";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { UserTabParamList } from "src/navigation/type";
 import UserOrderCard from "@components/UserOrderCard";
+import { Order, OrderStatus, OrderCardStatus } from "src/types/order.interface";
+import orders from "src/constants/order";
 
 const TABS = [
   { key: "ongoing", label: "ĐANG DIỄN RA" },
@@ -14,112 +14,17 @@ const TABS = [
   { key: "cancelled", label: "ĐÃ HUỶ" },
 ];
 
-const orders: Order[] = [
-  {
-    id: "1",
-    status: "pending",
-    productImage: require("../../../assets/pictures/auth/background.png"),
-    productName: "Rau củ tươi",
-    quantity: 3,
-    weight: "20kg",
-    price: "250.000đ",
-    pickupAddress: "Đường X, Phường Y, Quận XY, Thành Phố XXX, ...",
-    deliveryAddress: "Đường X, Phường Y, Quận XY, Thành Phố XXX, ...",
-    time: "Đơn hàng của bạn đang chờ xác nhận",
-    tag: "Chờ xác nhận",
-  },
-  {
-    id: "2",
-    status: "picking",
-    productImage: require("../../../assets/pictures/auth/background.png"),
-    productName: "Rau củ tươi",
-    quantity: 1,
-    weight: "10kg",
-    price: "250.000đ",
-    pickupAddress: "Đường X, Phường Y, Quận XY, Thành Phố XXX, ...",
-    deliveryAddress: "Đường X, Phường Y, Quận XY, Thành Phố XXX, ...",
-    time: "Thời gian lấy hàng ước tính 1 ngày",
-    tag: "Đang lấy hàng",
-  },
-  {
-    id: "3",
-    status: "picking",
-    productImage: require("../../../assets/pictures/auth/background.png"),
-    productName: "Rau củ tươi",
-    quantity: 1,
-    weight: "25kg",
-    price: "200.000đ",
-    pickupAddress: "Đường X, Phường Y, Quận XY, Thành Phố XXX, ...",
-    deliveryAddress: "Đường X, Phường Y, Quận XY, Thành Phố XXX, ...",
-    time: "Thời gian lấy hàng ước tính 1 ngày",
-    tag: "Đang lấy hàng",
-  },
-  {
-    id: "4",
-    status: "picking",
-    productImage: require("../../../assets/pictures/auth/background.png"),
-    productName: "Rau củ tươi",
-    quantity: 10,
-    weight: "10kg",
-    price: "250.000đ",
-    pickupAddress: "Đường X, Phường Y, Quận XY, Thành Phố XXX, ...",
-    deliveryAddress: "Đường X, Phường Y, Quận XY, Thành Phố XXX, ...",
-    time: "Thời gian giao hàng ước tính 1 ngày",
-    tag: "Đang giao hàng",
-  },
-  {
-    id: "5",
-    status: "review",
-    productImage: require("../../../assets/pictures/auth/background.png"),
-    productName: "Rau củ tươi",
-    quantity: 1,
-    weight: "20kg",
-    price: "200.000đ",
-    pickupAddress: "Đường X, Phường Y, Quận XY, Thành Phố XXX, ...",
-    deliveryAddress: "Đường X, Phường Y, Quận XY, Thành Phố XXX, ...",
-    time: "",
-    tag: "",
-  },
-  {
-    id: "6",
-    status: "cancelled",
-    productImage: require("../../../assets/pictures/auth/background.png"),
-    productName: "Rau củ tươi",
-    quantity: 1,
-    weight: "20kg",
-    price: "200.000đ",
-    pickupAddress: "Đường X, Phường Y, Quận XY, Thành Phố XXX, ...",
-    deliveryAddress: "Đường X, Phường Y, Quận XY, Thành Phố XXX, ...",
-    time: "Hoàn tiền thành công",
-    tag: "Đã huỷ",
-  },
-];
-
-interface Order {
-  id: string;
-  status: "pending" | "picking" | "review" | "cancelled";
-  productImage: any;
-  productName: string;
-  quantity: number;
-  weight: string;
-  price: string;
-  pickupAddress: string;
-  deliveryAddress: string;
-  time: string;
-  tag: string;
-}
-
-type UserOrderScreenNavigationProp = NativeStackNavigationProp<
-  UserTabParamList,
-  "UserOrder"
->;
-
-const statusMap = {
+const statusMap: Record<OrderCardStatus, OrderStatus> = {
   pending: "waiting",
   picking: "delivering",
   review: "delivered",
   cancelled: "cancelled",
 };
+
+type UserOrderScreenNavigationProp = NativeStackNavigationProp<
+  UserTabParamList,
+  "UserOrder"
+>;
 
 export default function UserOrderScreen() {
   const [tab, setTab] = useState("ongoing");
