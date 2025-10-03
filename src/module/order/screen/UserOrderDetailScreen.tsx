@@ -190,12 +190,8 @@ export default function UserOrderDetailScreen() {
         url = `https://us1.locationiq.com/v1/directions/driving/${origin};${destination}?key=${LOCATIONIQ_API_KEY}&steps=true&geometries=geojson&overview=full&exclude=ferry`;
       }
 
-      console.log("API URL:", url);
-
       const response = await fetch(url);
       const data = await response.json();
-
-      console.log("API Response:", JSON.stringify(data, null, 2));
 
       if (data.routes && data.routes.length > 0) {
         const route = data.routes[0];
