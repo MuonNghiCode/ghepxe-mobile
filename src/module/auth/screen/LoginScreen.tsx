@@ -11,6 +11,8 @@ import tw from "twrnc";
 import { useAuth } from "../../../context/AuthContext";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useToast } from "../../../hooks/useToast";
+import Toast from "@components/toast";
 
 type Role = "user" | "driver";
 
@@ -21,6 +23,7 @@ export default function LoginScreen() {
   const [remember, setRemember] = useState(false);
   const { login } = useAuth();
   const navigation = useNavigation();
+  const { toast, showError, showSuccess, hideToast } = useToast();
 
   const fakeAccounts = [
     { username: "user", password: "123456", role: "user" },
@@ -28,16 +31,26 @@ export default function LoginScreen() {
   ];
 
   function handleLogin() {
+    // Kiểm tra trường trống
+    if (!username.trim() || !password.trim()) {
+      showError("Vui lòng nhập đầy đủ thông tin!");
+      return;
+    }
+
     const found = fakeAccounts.find(
       (acc) => acc.username === username && acc.password === password
     );
+
     if (found) {
-      login(found.role as Role);
+      showSuccess("Đăng nhập thành công!");
+      setTimeout(() => {
+        login(found.role as Role);
+      }, 1000);
     } else {
-      alert("Tài khoản hoặc mật khẩu không đúng!");
-      return;
+      showError("Tài khoản hoặc mật khẩu không đúng!");
     }
   }
+
   return (
     <View style={tw`flex-1 bg-[#fcfcfc]`}>
       <View style={tw`overflow-hidden relative`}>
@@ -53,6 +66,7 @@ export default function LoginScreen() {
           <Ionicons name="arrow-back" size={22} color="#00A982" />
         </TouchableOpacity>
       </View>
+
       <View style={tw`px-6 -mt-10`}>
         <Text
           style={[
@@ -65,6 +79,7 @@ export default function LoginScreen() {
         <Text style={tw`text-center text-gray-500 mb-10`}>
           Đăng nhập vào tài khoản của bạn
         </Text>
+
         <View
           style={tw`flex-row items-center bg-gray-100 rounded-xl px-4 mb-5`}
         >
@@ -78,6 +93,7 @@ export default function LoginScreen() {
             placeholderTextColor="#888"
           />
         </View>
+
         <View
           style={tw`flex-row items-center bg-gray-100 rounded-xl px-4 mb-5`}
         >
@@ -180,6 +196,15 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Toast component */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+        position="top"
+      />
     </View>
   );
 }
