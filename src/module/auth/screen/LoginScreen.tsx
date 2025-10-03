@@ -12,7 +12,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useToast } from "../../../hooks/useToast";
-import Toast from "@components/toast";
+import Toast from "@components/Toast";
 
 type Role = "user" | "driver";
 

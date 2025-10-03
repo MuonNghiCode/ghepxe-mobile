@@ -40,7 +40,7 @@ export default function MatchingRouteScreen() {
       {mockRoutes.length === 0 ? (
         <View style={tw`flex-1 items-center justify-center bg-[#F8FFFE]`}>
           <Image
-            source={require("../../../assets/pictures/match/no-matching.png")}
+            source={require("../../../assets/pictures/match/nomatching.png")}
             style={{ width: 180, height: 140, resizeMode: "contain" }}
           />
           <Text style={tw`mt-6 text-base font-bold text-black text-center`}>

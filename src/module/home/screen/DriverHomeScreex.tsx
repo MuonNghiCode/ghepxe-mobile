@@ -120,7 +120,7 @@ export default function DriverHomeScreen() {
               <View style={tw`items-center mt-20 mb-20`}>
                 <View style={tw`mb-6`}>
                   <Image
-                    source={require("../../../assets/pictures/home/driver-offline.png")}
+                    source={require("../../../assets/pictures/home/driveroffline.png")}
                     style={tw`w-40 h-32`}
                     resizeMode="contain"
                   />

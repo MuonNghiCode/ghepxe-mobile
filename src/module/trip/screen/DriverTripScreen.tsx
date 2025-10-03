@@ -124,7 +124,7 @@ export default function DriverTripScreen() {
           (pendingOrders.length === 0 ? (
             <View style={tw`flex-1 items-center justify-center `}>
               <Image
-                source={require("../../../assets/pictures/home/driver-offline.png")}
+                source={require("../../../assets/pictures/home/driveroffline.png")}
                 style={{ width: 160, height: 120, resizeMode: "contain" }}
               />
               <Text style={tw`mt-6 text-base font-bold text-black text-center`}>
@@ -166,7 +166,7 @@ export default function DriverTripScreen() {
             {/* Empty State */}
             <View style={tw`flex-1 items-center justify-center`}>
               <Image
-                source={require("../../../assets/pictures/home/driver-offline.png")}
+                source={require("../../../assets/pictures/home/driveroffline.png")}
                 style={{ width: 160, height: 120, resizeMode: "contain" }}
               />
               <Text style={tw`mt-6 text-base font-bold text-black text-center`}>

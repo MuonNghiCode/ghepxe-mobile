@@ -189,7 +189,7 @@ export default function WelcomeScreen() {
         <View style={tw`flex-1 items-center justify-center z-10`}>
           <Animated.View style={[tw`items-center`, logoAnimatedStyle]}>
             <Image
-              source={require("../../../assets/pictures/logo-white.png")}
+              source={require("../../../assets/pictures/logowhite.png")}
               style={tw`w-60 h-60`}
               resizeMode="contain"
             />
