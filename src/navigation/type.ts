@@ -10,6 +10,9 @@ export type DriverTabParamList = {
   DriverTabs: undefined;
   CreateDriverRoute: undefined;
   MapSelect: undefined;
+  ConfirmRoute: undefined;
+  RouteBilling: undefined;
+  RouteShipping: undefined;
 };
 
 export type UserTabParamList = {

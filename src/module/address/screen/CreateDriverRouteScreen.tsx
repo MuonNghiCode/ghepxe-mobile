@@ -176,7 +176,7 @@ export default function CreateDriverRouteScreen() {
   }, [navigation]);
 
   const handleCurrentLocation = useCallback(() => {
-    navigation.navigate("ConfirmOrder" as never);
+    navigation.navigate("ConfirmRoute" as never);
   }, [navigation]);
 
   const handleAddNew = useCallback(() => {

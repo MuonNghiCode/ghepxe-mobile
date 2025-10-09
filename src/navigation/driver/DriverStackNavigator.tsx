@@ -2,6 +2,11 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { DriverTabNavigator } from "./DriverTabNavigator";
 import { DriverTabParamList } from "../type";
 import { CreateDriverRouteScreen, MapSelectScreen } from "src/module/address";
+import {
+  ConfirmRouteScreen,
+  RouteBillingAddressScreen,
+  RouteShippingAddressScreen,
+} from "src/module/router";
 
 const Stack = createNativeStackNavigator<DriverTabParamList>();
 
@@ -14,6 +19,12 @@ export default function UserStackNavigator() {
         component={CreateDriverRouteScreen}
       />
       <Stack.Screen name="MapSelect" component={MapSelectScreen} />
+      <Stack.Screen name="ConfirmRoute" component={ConfirmRouteScreen} />
+      <Stack.Screen name="RouteBilling" component={RouteBillingAddressScreen} />
+      <Stack.Screen
+        name="RouteShipping"
+        component={RouteShippingAddressScreen}
+      />
     </Stack.Navigator>
   );
 }
