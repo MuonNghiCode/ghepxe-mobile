@@ -103,10 +103,10 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MAP_HEIGHT = SCREEN_HEIGHT * 0.45;
 
 const STATUS_IMAGE = {
-  waiting: require("../../../assets/icons/pending.png"),
-  delivering: require("../../../assets/icons/pending.png"),
-  delivered: require("../../../assets/icons/complete.png"),
-  cancelled: require("../../../assets/icons/cancelled.png"),
+  waiting: require("../../../../assets/icons/pending.png"),
+  delivering: require("../../../../assets/icons/pending.png"),
+  delivered: require("../../../../assets/icons/complete.png"),
+  cancelled: require("../../../../assets/icons/cancelled.png"),
 };
 
 const calculateDistance = (
@@ -514,7 +514,7 @@ export default function UserOrderDetailScreen() {
           </View>
           <Text style={tw`text-xs text-gray-500 mb-2`}>28/06/2025 | 21:54</Text>
           <Text style={tw`text-xs text-gray-500 mb-2`}>
-            1 điểm giao - {distance || "Đang tính..."} •{" "}
+            1 điểm giao - {distance || "Đang tính..."} •
             {duration || "Đang tính..."}
           </Text>
           {/* Địa chỉ nhận với thông tin thực */}
@@ -637,7 +637,7 @@ export default function UserOrderDetailScreen() {
             >
               {/* Ảnh sản phẩm */}
               <Image
-                source={require("../../../assets/pictures/home/ad1.png")}
+                source={require("../../../../assets/pictures/home/ad1.png")}
                 style={tw`w-12 h-12 rounded mr-3`}
                 resizeMode="cover"
               />

@@ -8,6 +8,8 @@ export type AuthStackParamList = {
 
 export type DriverTabParamList = {
   DriverTabs: undefined;
+  CreateDriverRoute: undefined;
+  MapSelect: undefined;
 };
 
 export type UserTabParamList = {
@@ -42,6 +44,11 @@ export type RootStackParamList = {
       address: string;
     };
   };
-
+  CreateDriverRoute: {
+    mapLocation: {
+      coords: any;
+      address: string;
+    };
+  };
 };
 
