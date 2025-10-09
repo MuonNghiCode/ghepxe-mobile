@@ -25,7 +25,7 @@ const STATUS_CONFIG = {
     header: "Đơn hàng của bạn đang chờ xác nhận",
     tag: "Chờ xác nhận",
     tagColor: "#FFB800",
-    tagBg: "bg-[#FFF7E6]",
+    tagBg: "#FFF7E6",
     showButton: false,
   },
   picking: {
@@ -33,7 +33,7 @@ const STATUS_CONFIG = {
     header: "Thời gian lấy hàng ước tính 1 ngày",
     tag: "Đang lấy hàng",
     tagColor: "#00A982",
-    tagBg: "bg-[#E6F7F3]",
+    tagBg: "#E6F7F3",
     showButton: false,
   },
   review: {
@@ -41,15 +41,15 @@ const STATUS_CONFIG = {
     header: "Đánh giá dịch vụ để nhận 200 xu",
     tag: "Chờ đánh giá",
     tagColor: "#00A982",
-    tagBg: "bg-[#E6F7F3]",
+    tagBg: "#E6F7F3",
     showButton: true,
   },
   cancelled: {
     icon: "return-up-back",
     header: "Hoàn tiền thành công",
     tag: "Đã huỷ",
-    tagColor: "#6B6B6B",
-    tagBg: "bg-gray-100",
+    tagColor: "#6B7280",
+    tagBg: "#F3F4F6",
     showButton: false,
   },
 };
@@ -75,14 +75,23 @@ export default function UserOrderCard({
     <TouchableOpacity
       activeOpacity={0.93}
       onPress={onPress}
-      style={tw`bg-white rounded-2xl shadow px-0 py-0 mb-4`}
+      style={[
+        tw`bg-white rounded-2xl mb-3`,
+        {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.05,
+          shadowRadius: 6,
+          elevation: 2,
+        },
+      ]}
     >
       {/* Header */}
       <View style={tw`flex-row items-center justify-between px-4 pt-4 pb-2`}>
-        <View style={tw`flex-row items-center`}>
+        <View style={tw`flex-row items-center flex-1 mr-2`}>
           <Ionicons name={config.icon as any} size={18} color="#6B6B6B" />
           <Text
-            style={tw`ml-2 text-xs text-gray-700`}
+            style={tw`ml-2 text-xs text-gray-700 flex-1`}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
@@ -91,34 +100,31 @@ export default function UserOrderCard({
         </View>
         {config.showButton ? (
           <TouchableOpacity
-            style={tw`bg-[#00A982] rounded-full px-3 py-1`}
+            style={tw`bg-[#00A982] rounded-full px-3 py-1 flex-shrink-0`}
             onPress={onReview}
           >
-            <Text
-              style={tw`text-white text-xs font-semibold`}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
+            <Text style={tw`text-white text-xs font-semibold`}>
               Đánh giá ngay
             </Text>
           </TouchableOpacity>
         ) : (
           (tagText || config.tag) && (
-            <Text
-              style={tw.style(
-                "px-3 py-1 rounded-full text-xs font-semibold",
-                config.tagBg
-              )}
-              numberOfLines={1}
-              ellipsizeMode="tail"
+            <View
+              style={[
+                tw`px-3 py-1 rounded-full flex-shrink-0`,
+                { backgroundColor: config.tagBg },
+              ]}
             >
-              <Text style={{ color: config.tagColor }}>
+              <Text
+                style={[tw`text-xs font-semibold`, { color: config.tagColor }]}
+              >
                 {tagText || config.tag}
               </Text>
-            </Text>
+            </View>
           )
         )}
       </View>
+
       {/* Sản phẩm */}
       <View style={tw`flex-row items-center px-4 pt-3 pb-2`}>
         <Image
@@ -142,7 +148,9 @@ export default function UserOrderCard({
         </View>
         <Text style={tw`text-base text-gray-700 font-semibold`}>{price}</Text>
       </View>
+
       <View style={tw`border-b border-gray-100 mx-4`} />
+
       {/* Địa chỉ */}
       <View style={tw`px-4 py-2`}>
         <View style={tw`flex-row items-center mb-1`}>
@@ -153,10 +161,10 @@ export default function UserOrderCard({
               name="stop"
               size={12}
               color="white"
-              style={tw`bg-black rounded-full `}
+              style={tw`bg-black rounded-full`}
             />
           </View>
-          <Text style={tw`ml-2 text-sm text-gray-800`} numberOfLines={1}>
+          <Text style={tw`ml-2 text-sm text-gray-800 flex-1`} numberOfLines={1}>
             {pickupAddress}
           </Text>
         </View>
@@ -168,14 +176,15 @@ export default function UserOrderCard({
               name="arrow-down"
               size={12}
               color="#fff"
-              style={tw`bg-[#00A982] rounded-full `}
+              style={tw`bg-[#00A982] rounded-full`}
             />
           </View>
-          <Text style={tw`ml-2 text-sm text-gray-800`} numberOfLines={1}>
+          <Text style={tw`ml-2 text-sm text-gray-800 flex-1`} numberOfLines={1}>
             {deliveryAddress}
           </Text>
         </View>
       </View>
+
       {/* Footer: tổng kết */}
       <View
         style={tw`flex-row items-center justify-between px-4 py-2 border-t border-gray-100`}

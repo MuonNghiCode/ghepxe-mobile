@@ -7,6 +7,7 @@ import {
   RouteBillingAddressScreen,
   RouteShippingAddressScreen,
 } from "src/module/router";
+import { DriverOrderDetailScreen } from "src/module/order";
 
 const Stack = createNativeStackNavigator<DriverTabParamList>();
 
@@ -24,6 +25,10 @@ export default function UserStackNavigator() {
       <Stack.Screen
         name="RouteShipping"
         component={RouteShippingAddressScreen}
+      />
+      <Stack.Screen
+        name="DriverOrderDetail"
+        component={DriverOrderDetailScreen}
       />
     </Stack.Navigator>
   );

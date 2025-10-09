@@ -13,6 +13,9 @@ export type DriverTabParamList = {
   ConfirmRoute: undefined;
   RouteBilling: undefined;
   RouteShipping: undefined;
+  DriverOrderDetail: undefined;
+  DriverOrder: undefined;
+  Order: { order: any };
 };
 
 export type UserTabParamList = {

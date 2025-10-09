@@ -23,6 +23,8 @@ export interface Order {
   deliveryLongitude: number;
   time: string;
   tag: string;
+  customerName?: string;
+  customerRating?: number;
 }
 
 export interface StatusConfig {
