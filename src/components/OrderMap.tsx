@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, Image, TouchableOpacity, Dimensions } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
+import { Ionicons } from "@expo/vector-icons";
 import tw from "twrnc";
 import { useOrderMap } from "src/hooks/useOrderMap";
 
@@ -44,13 +45,29 @@ export const OrderMap: React.FC<OrderMapProps> = ({
 }) => {
   const customerCoordinates = customers.map((c) => c.coordinates);
 
-  const { mapRef, routeCoordinates, distance, duration } = useOrderMap({
-    pickupCoordinates,
-    deliveryCoordinates,
-    customerCoordinates,
-    enableVietnameseRoute,
-    orderType, // Thêm prop này
-  });
+  const { mapRef, routeCoordinates, distance, duration, fitMapToCoordinates } =
+    useOrderMap({
+      pickupCoordinates,
+      deliveryCoordinates,
+      customerCoordinates,
+      enableVietnameseRoute,
+      orderType,
+    });
+
+  // Hàm để fit map khi user nhấn nút
+  const handleFitMap = () => {
+    if (mapRef.current) {
+      const coordinates =
+        routeCoordinates.length > 2
+          ? routeCoordinates
+          : [pickupCoordinates, deliveryCoordinates, ...customerCoordinates];
+
+      mapRef.current.fitToCoordinates(coordinates, {
+        edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
+        animated: true,
+      });
+    }
+  };
 
   return (
     <View style={tw`w-full`}>
@@ -64,33 +81,33 @@ export const OrderMap: React.FC<OrderMapProps> = ({
         showsUserLocation={false}
         showsMyLocationButton={false}
       >
-        {/* Marker điểm nhận */}
+        {/* Marker điểm nhận - màu đỏ */}
         <Marker
           coordinate={pickupCoordinates}
-          pinColor="#000"
+          pinColor="#FF0000"
           title="Điểm nhận"
           description={pickupAddress}
         />
 
-        {/* Marker điểm giao chính */}
-        <Marker
-          coordinate={deliveryCoordinates}
-          pinColor="#00A982"
-          title="Điểm giao cuối"
-          description={deliveryAddress}
-        />
-
-        {/* Markers cho từng khách hàng trong đơn ghép */}
+        {/* Markers cho từng khách hàng trong đơn ghép - màu đỏ */}
         {orderType === "grouped" &&
           customers.map((customer, index) => (
             <Marker
               key={customer.id}
               coordinate={customer.coordinates}
-              pinColor={`hsl(${index * 137.5}, 60%, 50%)`}
-              title={`${customer.name} (${index + 1})`}
+              pinColor="#FF0000"
+              title={`Điểm giao ${index + 1}: ${customer.name}`}
               description={customer.address}
             />
           ))}
+
+        {/* Marker điểm giao cuối - màu xanh */}
+        <Marker
+          coordinate={deliveryCoordinates}
+          pinColor="#00A982"
+          title="Điểm đến cuối"
+          description={deliveryAddress}
+        />
 
         {/* Polyline đường đi */}
         {routeCoordinates.length > 0 && (
@@ -104,18 +121,39 @@ export const OrderMap: React.FC<OrderMapProps> = ({
         )}
       </MapView>
 
+      {/* Nút Fit Map */}
+      <TouchableOpacity
+        onPress={handleFitMap}
+        style={[
+          tw`absolute right-4`,
+          {
+            top: 16,
+            backgroundColor: "#fff",
+            borderRadius: 8,
+            padding: 8,
+            shadowColor: "#000",
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 3,
+          },
+        ]}
+      >
+        <Ionicons name="scan-outline" size={20} color="#00A982" />
+      </TouchableOpacity>
+
       {/* Icon trạng thái trên map */}
       <TouchableOpacity
         style={[
           tw`absolute right-4`,
           {
-            bottom: 24,
+            bottom: 80,
             backgroundColor: "#fff",
             borderRadius: 9999,
             padding: 8,
             shadowColor: "#000",
             shadowOpacity: 0.1,
             shadowRadius: 4,
+            elevation: 3,
           },
         ]}
       >
@@ -135,6 +173,7 @@ export const OrderMap: React.FC<OrderMapProps> = ({
               shadowColor: "#000",
               shadowOpacity: 0.1,
               shadowRadius: 4,
+              elevation: 3,
             },
           ]}
         >

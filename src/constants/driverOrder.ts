@@ -1,7 +1,7 @@
 import { DriverOrder } from "src/types/driverOrder.interface";
 
 const driverOrders: DriverOrder[] = [
-  // --- Đơn lẻ - Đã hủy ---
+  // --- Đơn lẻ - Đã hủy --- (Không thay đổi)
   {
     id: "1",
     type: "single",
@@ -36,7 +36,7 @@ const driverOrders: DriverOrder[] = [
             image: require("../assets/pictures/home/ad1.png"),
           },
           {
-            id: "order_1_2", 
+            id: "order_1_2",
             productName: "Củ cải trắng Đà Lạt",
             quantity: 1,
             weight: "15kg",
@@ -56,19 +56,19 @@ const driverOrders: DriverOrder[] = [
     ]
   },
 
-  // --- Đơn ghép - Đã hoàn thành ---
+  // --- Đơn ghép - Đã hoàn thành (CẬP NHẬT: Tuyến Tiền Giang -> Đồng Nai) ---
   {
-    id: "2", 
+    id: "2",
     type: "grouped",
     status: "completed",
     date: "28/6/2025 | 9:30",
-    time: "29/6/2025 | 10:00", 
-    pickupAddress: "Chợ Bà Chiểu, Phường 1, Quận Bình Thạnh, TP.HCM",
-    deliveryAddress: "Khu vực Thủ Đức - Nhiều điểm giao hàng",
-    pickupCoordinates: { latitude: 10.8023, longitude: 106.7054 },
-    deliveryCoordinates: { latitude: 10.8231, longitude: 106.6297 },
+    time: "29/6/2025 | 18:00",
+    pickupAddress: "Vựa trái cây Cái Bè, Huyện Cái Bè, Tiền Giang",
+    deliveryAddress: "Tuyến Miền Tây - Đông Nam Bộ (Nhiều điểm)",
+    pickupCoordinates: { latitude: 10.3204, longitude: 105.9080 },
+    deliveryCoordinates: { latitude: 10.5752, longitude: 107.2414 }, // Tọa độ điểm cuối ở Long Thành
     totalQuantity: 12,
-    totalWeight: "95kg", 
+    totalWeight: "95kg",
     totalPrice: "+850.000đ",
     productName: "Trái cây nhập khẩu cao cấp",
     productImage: require("../assets/pictures/auth/background.png"),
@@ -77,8 +77,9 @@ const driverOrders: DriverOrder[] = [
         id: "1",
         name: "Phạm Minh Quân",
         phone: "0912345678",
-        address: "Khu du lịch Suối Tiên, Phường Tân Phú, TP. Thủ Đức, TP.HCM",
-        coordinates: { latitude: 10.8231, longitude: 106.6297 },
+        // Điểm giao 1: Nằm ở TP.HCM, trên đường từ Tiền Giang đi Đồng Nai
+        address: "Khu đô thị Phú Mỹ Hưng, Quận 7, TP.HCM",
+        coordinates: { latitude: 10.7293, longitude: 106.7021 },
         rating: 5,
         price: "+320.000đ",
         orders: [
@@ -94,18 +95,19 @@ const driverOrders: DriverOrder[] = [
             id: "order_2_1_2",
             productName: "Nho đen Chile",
             quantity: 1,
-            weight: "5kg", 
+            weight: "5kg",
             price: "140.000đ",
             image: require("../assets/pictures/home/ad1.png"),
           }
         ]
       },
       {
-        id: "2", 
+        id: "2",
         name: "Trần Văn An",
         phone: "0923456789",
-        address: "Đại học Quốc gia TP.HCM, Phường Linh Trung, TP. Thủ Đức, TP.HCM",
-        coordinates: { latitude: 10.8700, longitude: 106.8030 },
+        // Điểm giao 2: Nằm ở Biên Hòa, tiếp tục trên tuyến đường
+        address: "KCN Amata, P. Long Bình, TP. Biên Hòa, Đồng Nai",
+        coordinates: { latitude: 10.9525, longitude: 106.8441 },
         rating: 5,
         price: "+280.000đ",
         orders: [
@@ -114,7 +116,7 @@ const driverOrders: DriverOrder[] = [
             productName: "Cam Úc cao cấp",
             quantity: 3,
             weight: "15kg",
-            price: "160.000đ", 
+            price: "160.000đ",
             image: require("../assets/pictures/home/ad1.png"),
           },
           {
@@ -129,10 +131,11 @@ const driverOrders: DriverOrder[] = [
       },
       {
         id: "3",
-        name: "Lê Thị Bích", 
+        name: "Lê Thị Bích",
         phone: "0934567890",
-        address: "Vinhomes Grand Park, Phường Long Thạnh Mỹ, TP. Thủ Đức, TP.HCM",
-        coordinates: { latitude: 10.8411, longitude: 106.8330 },
+        // Điểm giao 3: Điểm cuối của tuyến tại Long Thành
+        address: "Sân bay Long Thành, Huyện Long Thành, Đồng Nai",
+        coordinates: { latitude: 10.5752, longitude: 107.2414 },
         rating: 4,
         price: "+250.000đ",
         orders: [
@@ -148,7 +151,7 @@ const driverOrders: DriverOrder[] = [
             id: "order_2_3_2",
             productName: "Cherry đỏ Mỹ",
             quantity: 2,
-            weight: "10kg", 
+            weight: "10kg",
             price: "50.000đ",
             image: require("../assets/pictures/home/ad1.png"),
           }
@@ -157,15 +160,15 @@ const driverOrders: DriverOrder[] = [
     ]
   },
 
-  // --- Đơn lẻ - Đang diễn ra ---
+  // --- Đơn lẻ - Đang diễn ra --- (Không thay đổi)
   {
     id: "3",
-    type: "single", 
+    type: "single",
     status: "ongoing",
     date: "28/6/2025 | 9:30",
     time: "",
     pickupAddress: "47 Lê Duẩn, Phường Bến Nghé, Quận 1, TP.HCM",
-    deliveryAddress: "Tòa nhà Landmark 81, Quận Bình Thạnh, TP.HCM", 
+    deliveryAddress: "Tòa nhà Landmark 81, Quận Bình Thạnh, TP.HCM",
     pickupCoordinates: { latitude: 10.7796, longitude: 106.6947 },
     deliveryCoordinates: { latitude: 10.7952, longitude: 106.7218 },
     totalQuantity: 8,
@@ -220,7 +223,7 @@ const driverOrders: DriverOrder[] = [
     ]
   },
 
-  // --- Đơn ghép - Đang diễn ra (HCM -> Bình Dương + Đồng Nai) ---
+  // --- Đơn ghép - Đang diễn ra (CẬP NHẬT: Tuyến Bắc-Nam: HCM -> Đà Nẵng -> Hà Nội) ---
   {
     id: "4",
     type: "grouped",
@@ -228,9 +231,9 @@ const driverOrders: DriverOrder[] = [
     date: "30/6/2025 | 10:00",
     time: "",
     pickupAddress: "Khu công nghệ cao, TP. Thủ Đức, TP.HCM",
-    deliveryAddress: "Khu vực Bình Dương - Đồng Nai",
+    deliveryAddress: "Tuyến Bắc - Nam (HCM - Đà Nẵng - Hà Nội)",
     pickupCoordinates: { latitude: 10.8506, longitude: 106.7717 },
-    deliveryCoordinates: { latitude: 10.9804, longitude: 106.6519 },
+    deliveryCoordinates: { latitude: 21.0285, longitude: 105.8542 }, // Tọa độ điểm cuối ở Hà Nội
     totalQuantity: 15,
     totalWeight: "320kg",
     totalPrice: "+2.800.000đ",
@@ -239,10 +242,11 @@ const driverOrders: DriverOrder[] = [
     customers: [
       {
         id: "1",
-        name: "Công ty TNHH TechLink",
+        name: "Công ty TNHH TechLink Đà Nẵng",
         phone: "0956789012",
-        address: "Khu công nghiệp VSIP I, P. An Phú, TP. Thuận An, Bình Dương",
-        coordinates: { latitude: 10.9804, longitude: 106.6519 },
+        // Điểm giao 1: Nằm ở Đà Nẵng, chặng giữa của tuyến
+        address: "KCN Hòa Khánh, Q. Liên Chiểu, TP. Đà Nẵng",
+        coordinates: { latitude: 16.0748, longitude: 108.1499 },
         rating: null,
         price: "+1.200.000đ",
         orders: [
@@ -266,10 +270,11 @@ const driverOrders: DriverOrder[] = [
       },
       {
         id: "2",
-        name: "Nhà máy Samsung Đồng Nai",
+        name: "Nhà máy Vinsmart Hà Nội",
         phone: "0967890123",
-        address: "KCN Amata, P. Long Bình, TP. Biên Hòa, Đồng Nai",
-        coordinates: { latitude: 10.9525, longitude: 106.8441 },
+        // Điểm giao 2: Điểm cuối của tuyến ở Hà Nội
+        address: "Khu công nghệ cao Hoà Lạc, Thạch Thất, Hà Nội",
+        coordinates: { latitude: 21.0285, longitude: 105.8542 },
         rating: null,
         price: "+1.000.000đ",
         orders: [
@@ -293,10 +298,11 @@ const driverOrders: DriverOrder[] = [
       },
       {
         id: "3",
-        name: "Tập đoàn Becamex IDC",
+        name: "Tập đoàn FPT (Trụ sở chính)",
         phone: "0978901234",
-        address: "Khu đô thị mới Bình Dương, TP. Thủ Dầu Một, Bình Dương",
-        coordinates: { latitude: 10.9676, longitude: 106.6518 },
+        // Điểm giao 3: Cũng là một điểm cuối ở Hà Nội
+        address: "Tòa nhà FPT, 17 Duy Tân, Cầu Giấy, Hà Nội",
+        coordinates: { latitude: 21.0288, longitude: 105.7836 },
         rating: null,
         price: "+600.000đ",
         orders: [
@@ -313,17 +319,17 @@ const driverOrders: DriverOrder[] = [
     ]
   },
 
-  // --- Đơn ghép - Đã hoàn thành (HCM -> Cần Thơ) ---
+  // --- Đơn ghép - Đã hoàn thành (CẬP NHẬT: Tuyến Miền Tây: HCM -> Vĩnh Long -> Cần Thơ) ---
   {
     id: "5",
     type: "grouped",
     status: "completed",
     date: "25/6/2025 | 7:00",
-    time: "25/6/2025 | 14:30",
+    time: "25/6/2025 | 16:30",
     pickupAddress: "Chợ đầu mối Bình Điền, Đại lộ Nguyễn Văn Linh, Quận 8, TP.HCM",
-    deliveryAddress: "Khu vực trung tâm TP. Cần Thơ",
+    deliveryAddress: "Tuyến Miền Tây (HCM - Vĩnh Long - Cần Thơ)",
     pickupCoordinates: { latitude: 10.7220, longitude: 106.6025 },
-    deliveryCoordinates: { latitude: 10.0452, longitude: 105.7469 },
+    deliveryCoordinates: { latitude: 10.0144, longitude: 105.7644 }, // Tọa độ điểm cuối ở Cái Răng, Cần Thơ
     totalQuantity: 18,
     totalWeight: "280kg",
     totalPrice: "+3.200.000đ",
@@ -332,10 +338,11 @@ const driverOrders: DriverOrder[] = [
     customers: [
       {
         id: "1",
-        name: "Nhà hàng Sông Nước",
+        name: "Nhà hàng ven sông Cửu Long",
         phone: "0989012345",
-        address: "Bến Ninh Kiều, P. Tân An, Q. Ninh Kiều, TP. Cần Thơ",
-        coordinates: { latitude: 10.0452, longitude: 105.7469 },
+        // Điểm giao 1: Nằm ở Vĩnh Long, trên đường từ HCM đi Cần Thơ
+        address: "Phà Đình Khao, Xã An Bình, Huyện Long Hồ, Vĩnh Long",
+        coordinates: { latitude: 10.2706, longitude: 105.9754 },
         rating: 5,
         price: "+1.800.000đ",
         orders: [
@@ -369,6 +376,7 @@ const driverOrders: DriverOrder[] = [
         id: "2",
         name: "Cửa hàng Quà Việt",
         phone: "0990123456",
+        // Điểm giao 2: Điểm cuối của tuyến tại Cần Thơ
         address: "Chợ nổi Cái Răng, Q. Cái Răng, TP. Cần Thơ",
         coordinates: { latitude: 10.0144, longitude: 105.7644 },
         rating: 5,
@@ -404,8 +412,9 @@ const driverOrders: DriverOrder[] = [
         id: "3",
         name: "Siêu thị Co.opmart Cần Thơ",
         phone: "0901234567",
-        address: "Đường 3/2, P. Xuân Khánh, Q. Ninh Kiều, TP. Cần Thơ",
-        coordinates: { latitude: 10.0621, longitude: 105.7851 },
+        // Điểm giao 3: Cũng là một điểm cuối tại Cần Thơ
+        address: "Bến Ninh Kiều, P. Tân An, Q. Ninh Kiều, TP. Cần Thơ",
+        coordinates: { latitude: 10.0452, longitude: 105.7469 },
         rating: 4,
         price: "+400.000đ",
         orders: [
@@ -430,7 +439,7 @@ const driverOrders: DriverOrder[] = [
     ]
   },
 
-  // --- Đơn lẻ - Đã hoàn thành (HCM -> Đà Nẵng) ---
+  // --- Đơn lẻ - Đã hoàn thành (HCM -> Đà Nẵng) --- (Không thay đổi)
   {
     id: "6",
     type: "single",

@@ -10,8 +10,8 @@ interface Coordinates {
 interface UseOrderMapProps {
   pickupCoordinates: Coordinates;
   deliveryCoordinates: Coordinates;
-  customerCoordinates?: Coordinates[]; // cho đơn ghép
-  enableVietnameseRoute?: boolean; // cho user order
+  customerCoordinates?: Coordinates[]; 
+  enableVietnameseRoute?: boolean; 
   orderType?: 'single' | 'grouped';
 }
 
@@ -26,6 +26,7 @@ export const useOrderMap = ({
   const [routeCoordinates, setRouteCoordinates] = useState<any[]>([]);
   const [distance, setDistance] = useState<string>("");
   const [duration, setDuration] = useState<string>("");
+  const [hasInitiallyFit, setHasInitiallyFit] = useState(false);
 
   const calculateDistance = useCallback((
     lat1: number,
@@ -46,7 +47,6 @@ export const useOrderMap = ({
     return R * c;
   }, []);
 
-  // Hàm tìm đường đi ngắn nhất qua tất cả customer points (TSP problem)
   const findOptimalRoute = useCallback((
     start: Coordinates,
     end: Coordinates,
@@ -55,13 +55,10 @@ export const useOrderMap = ({
     if (customers.length === 0) {
       return [start, end];
     }
-
-    // Nếu chỉ có 1 customer
     if (customers.length === 1) {
       return [start, customers[0], end];
     }
 
-    // Với nhiều customers, dùng nearest neighbor algorithm
     const unvisited = [...customers];
     const route = [start];
     let current = start;
@@ -76,7 +73,6 @@ export const useOrderMap = ({
         nearest.longitude
       );
 
-      // Tìm customer gần nhất
       for (let i = 1; i < unvisited.length; i++) {
         const dist = calculateDistance(
           current.latitude,
@@ -100,135 +96,52 @@ export const useOrderMap = ({
     return route;
   }, [calculateDistance]);
 
-  const getVietnameseWaypoints = useCallback((
-    fromLat: number,
-    fromLng: number,
-    toLat: number,
-    toLng: number
-  ) => {
-    const waypoints = [];
-    const distance = Math.abs(fromLat - toLat);
-
-    if (distance > 5) {
-      if (fromLat > toLat) {
-        waypoints.push(
-          { latitude: 20.5, longitude: 106.0 },
-          { latitude: 18.5, longitude: 105.8 },
-          { latitude: 16.0, longitude: 108.2 },
-          { latitude: 14.0, longitude: 109.0 },
-          { latitude: 12.0, longitude: 109.2 }
-        );
-      } else {
-        waypoints.push(
-          { latitude: 12.0, longitude: 109.2 },
-          { latitude: 14.0, longitude: 109.0 },
-          { latitude: 16.0, longitude: 108.2 },
-          { latitude: 18.5, longitude: 105.8 },
-          { latitude: 20.5, longitude: 106.0 }
+  const createFallbackRoute = useCallback(() => {
+    setRouteCoordinates([]);
+    
+    let totalDistance = 0;
+    
+    if (orderType === 'grouped' && customerCoordinates.length > 0) {
+      const optimalRoute = findOptimalRoute(pickupCoordinates, deliveryCoordinates, customerCoordinates);
+      for (let i = 0; i < optimalRoute.length - 1; i++) {
+        totalDistance += calculateDistance(
+          optimalRoute[i].latitude,
+          optimalRoute[i].longitude,
+          optimalRoute[i + 1].latitude,
+          optimalRoute[i + 1].longitude
         );
       }
-    }
-    return waypoints;
-  }, []);
-
-  const createFallbackRoute = useCallback(() => {
-    let route: Coordinates[] = [];
-
-    if (orderType === 'grouped' && customerCoordinates.length > 0) {
-      // Đơn ghép: tìm đường đi tối ưu qua tất cả customers
-      route = findOptimalRoute(pickupCoordinates, deliveryCoordinates, customerCoordinates);
-    } else if (enableVietnameseRoute) {
-      // Đơn lẻ User: Vietnamese route logic
-      const route1APoints = [
-        pickupCoordinates,
-        { latitude: 20.5, longitude: 106.0 },
-        { latitude: 18.5, longitude: 105.8 },
-        { latitude: 16.0, longitude: 108.2 },
-        { latitude: 14.0, longitude: 109.0 },
-        { latitude: 12.0, longitude: 109.2 },
-        { latitude: 11.0, longitude: 108.0 },
-        deliveryCoordinates,
-      ];
-
-      route = route1APoints.filter((point) => {
-        if (pickupCoordinates.latitude > deliveryCoordinates.latitude) {
-          return point.latitude <= pickupCoordinates.latitude && 
-                 point.latitude >= deliveryCoordinates.latitude;
-        } else {
-          return point.latitude >= pickupCoordinates.latitude && 
-                 point.latitude <= deliveryCoordinates.latitude;
-        }
-      });
     } else {
-      // Đơn lẻ Driver: simple mock route
-      route = [
-        pickupCoordinates,
-        {
-          latitude: pickupCoordinates.latitude + 
-                   (deliveryCoordinates.latitude - pickupCoordinates.latitude) * 0.25,
-          longitude: pickupCoordinates.longitude + 
-                    (deliveryCoordinates.longitude - pickupCoordinates.longitude) * 0.25,
-        },
-        {
-          latitude: pickupCoordinates.latitude + 
-                   (deliveryCoordinates.latitude - pickupCoordinates.latitude) * 0.5,
-          longitude: pickupCoordinates.longitude + 
-                    (deliveryCoordinates.longitude - pickupCoordinates.longitude) * 0.5,
-        },
-        {
-          latitude: pickupCoordinates.latitude + 
-                   (deliveryCoordinates.latitude - pickupCoordinates.latitude) * 0.75,
-          longitude: pickupCoordinates.longitude + 
-                    (deliveryCoordinates.longitude - pickupCoordinates.longitude) * 0.75,
-        },
-        deliveryCoordinates,
-      ];
-    }
-
-    setRouteCoordinates(route);
-
-    // Calculate distance and duration for fallback route
-    let totalDistance = 0;
-    for (let i = 0; i < route.length - 1; i++) {
-      totalDistance += calculateDistance(
-        route[i].latitude,
-        route[i].longitude,
-        route[i + 1].latitude,
-        route[i + 1].longitude
+      totalDistance = calculateDistance(
+        pickupCoordinates.latitude,
+        pickupCoordinates.longitude,
+        deliveryCoordinates.latitude,
+        deliveryCoordinates.longitude
       );
     }
 
-    const estimatedHours = totalDistance / 50;
+    const estimatedHours = totalDistance / 40;
     let durationText;
     if (estimatedHours >= 1) {
       const hours = Math.floor(estimatedHours);
       const minutes = Math.round((estimatedHours - hours) * 60);
-      durationText = minutes > 0 ? `${hours}h ${minutes}p` : `${hours}h`;
+      durationText = minutes > 0 ? `~${hours}h ${minutes}p` : `~${hours}h`;
     } else {
       const minutes = Math.round(estimatedHours * 60);
-      durationText = `${minutes} phút`;
+      durationText = `~${minutes} phút`;
     }
 
-    setDistance(`${totalDistance.toFixed(0)} km`);
+    setDistance(`~${totalDistance.toFixed(0)} km`);
     setDuration(durationText);
-  }, [pickupCoordinates, deliveryCoordinates, enableVietnameseRoute, orderType, customerCoordinates, findOptimalRoute, calculateDistance]);
+  }, [pickupCoordinates, deliveryCoordinates, orderType, customerCoordinates, findOptimalRoute, calculateDistance]);
 
   const getDirections = useCallback(async () => {
     try {
       let waypoints: Coordinates[] = [];
 
       if (orderType === 'grouped' && customerCoordinates.length > 0) {
-        // Đơn ghép: tìm route tối ưu qua tất cả customers
         const optimalRoute = findOptimalRoute(pickupCoordinates, deliveryCoordinates, customerCoordinates);
-        waypoints = optimalRoute.slice(1, -1); // Loại bỏ điểm đầu và cuối
-      } else if (enableVietnameseRoute) {
-        // Đơn lẻ User: Vietnamese waypoints
-        waypoints = getVietnameseWaypoints(
-          pickupCoordinates.latitude,
-          pickupCoordinates.longitude,
-          deliveryCoordinates.latitude,
-          deliveryCoordinates.longitude
-        );
+        waypoints = optimalRoute.slice(1, -1); 
       }
 
       const origin = `${pickupCoordinates.longitude},${pickupCoordinates.latitude}`;
@@ -265,6 +178,7 @@ export const useOrderMap = ({
         setDistance(`${distanceKm} km`);
         setDuration(durationText);
 
+        // Chuyển đổi coordinates từ LocationIQ format
         const coordinates = route.geometry.coordinates.map(
           (coord: number[]) => ({
             latitude: coord[1],
@@ -272,40 +186,71 @@ export const useOrderMap = ({
           })
         );
 
+        console.log('Route coordinates count:', coordinates.length);
         setRouteCoordinates(coordinates);
       } else {
+        console.log('No routes found, using fallback');
         createFallbackRoute();
       }
     } catch (error) {
       console.error("Error fetching directions:", error);
       createFallbackRoute();
     }
-  }, [pickupCoordinates, deliveryCoordinates, enableVietnameseRoute, orderType, customerCoordinates, getVietnameseWaypoints, findOptimalRoute, createFallbackRoute]);
+  }, [pickupCoordinates, deliveryCoordinates, orderType, customerCoordinates, findOptimalRoute, createFallbackRoute]);
 
   const fitMapToCoordinates = useCallback(() => {
-    if (mapRef.current && routeCoordinates.length > 0) {
-      const coordinates = routeCoordinates.length > 2
-        ? routeCoordinates
-        : [pickupCoordinates, deliveryCoordinates];
+    if (mapRef.current) {
+      let coordinates: Coordinates[] = [];
+      
+      if (routeCoordinates.length > 2) {
 
-      mapRef.current.fitToCoordinates(coordinates, {
-        edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
-        animated: true,
-      });
+        coordinates = routeCoordinates;
+      } else {
+
+        coordinates = [pickupCoordinates, deliveryCoordinates, ...customerCoordinates];
+      }
+
+      if (coordinates.length > 0) {
+        mapRef.current.fitToCoordinates(coordinates, {
+          edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
+          animated: true,
+        });
+      }
     }
-  }, [routeCoordinates, pickupCoordinates, deliveryCoordinates]);
+  }, [routeCoordinates, pickupCoordinates, deliveryCoordinates, customerCoordinates]);
+
+  const autoFitMapToCoordinates = useCallback(() => {
+    if (mapRef.current && !hasInitiallyFit) {
+      let coordinates: Coordinates[] = [];
+      
+      if (routeCoordinates.length > 2) {
+        coordinates = routeCoordinates;
+      } else {
+        coordinates = [pickupCoordinates, deliveryCoordinates, ...customerCoordinates];
+      }
+
+      if (coordinates.length > 0) {
+        mapRef.current.fitToCoordinates(coordinates, {
+          edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
+          animated: true,
+        });
+        
+        setHasInitiallyFit(true);
+      }
+    }
+  }, [routeCoordinates, pickupCoordinates, deliveryCoordinates, customerCoordinates, hasInitiallyFit]);
 
   useEffect(() => {
     getDirections();
   }, [getDirections]);
 
   useEffect(() => {
-    if (routeCoordinates.length > 0) {
+    if (routeCoordinates.length > 0 || (!hasInitiallyFit && pickupCoordinates && deliveryCoordinates)) {
       setTimeout(() => {
-        fitMapToCoordinates();
+        autoFitMapToCoordinates();
       }, 1000);
     }
-  }, [routeCoordinates, fitMapToCoordinates]);
+  }, [routeCoordinates, autoFitMapToCoordinates, pickupCoordinates, deliveryCoordinates, hasInitiallyFit]);
 
   return {
     mapRef,
