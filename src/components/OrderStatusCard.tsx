@@ -2,31 +2,7 @@ import React from "react";
 import { Text, View, Image, TouchableOpacity } from "react-native";
 import tw from "twrnc";
 import { Ionicons } from "@expo/vector-icons";
-
-interface OrderCardProps {
-  order: {
-    id: string;
-    customerName?: string;
-    rating?: number;
-    requestTime?: string;
-    pickup: {
-      address: string;
-      details: string;
-    };
-    delivery: {
-      address: string;
-      distance?: string;
-    };
-    price: string;
-    co2Reduction?: string;
-    status: string;
-    serviceType: "single" | "shared";
-  };
-  onAccept?: (orderId: string) => void;
-  onContact?: (orderId: string) => void;
-  showCustomerInfo?: boolean;
-  variant?: "suggestion" | "current";
-}
+import { OrderCardProps } from "src/types/order.interface";
 
 export default function OrderStatusCard({
   order,

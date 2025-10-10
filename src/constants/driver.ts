@@ -2,17 +2,49 @@
 const mockDriverRoutes = [
   {
     id: "1",
-    avatar: "https://i.pravatar.cc/100?img=1",
-    driverName: "Nguyễn Văn A",
-    rating: 4.8,
+    avatar: "https://i.pravatar.cc/150?img=1",
+    driverName: "Phạm Minh Quân",
+    rating: 5,
     from: "TP. Hồ Chí Minh",
     to: "TP. Vũng Tàu",
     vehicle: "Xe tải",
-    goods: "Hàng hóa tổng hợp",
-    size: "3x2x1.5m",
-    discount: 15,
+    goods: "Quần áo",
+    size: "8kg • 35x25x15cm",
+    discount: 12,
+    estimatedPrice: "180.000đ",
+    distance: "125 km", // Thêm khoảng cách
+    duration: "2h 30p", // Thêm thời gian
   },
-  // Thêm chuyến khác nếu cần
+  {
+    id: "2",
+    avatar: "https://i.pravatar.cc/150?img=2",
+    driverName: "Nguyễn Văn An",
+    rating: 4.8,
+    from: "TP. Hồ Chí Minh",
+    to: "Đà Nẵng",
+    vehicle: "Xe tải",
+    goods: "Điện tử",
+    size: "15kg • 50x40x30cm",
+    discount: 25,
+    estimatedPrice: "350.000đ",
+    distance: "950 km", // Thêm khoảng cách
+    duration: "12h 45p", // Thêm thời gian
+  },
+  {
+    id: "3",
+    avatar: "https://i.pravatar.cc/150?img=3",
+    driverName: "Trần Văn Bình",
+    rating: 4.7,
+    from: "TP. Hồ Chí Minh", 
+    to: "Cần Thơ",
+    vehicle: "Xe tải",
+    goods: "Thực phẩm",
+    size: "20kg • 60x45x35cm",
+    discount: 18,
+    estimatedPrice: "220.000đ",
+    distance: "170 km", // Thêm khoảng cách
+    duration: "3h 15p", // Thêm thời gian
+  },
 ];
 
 export default mockDriverRoutes;

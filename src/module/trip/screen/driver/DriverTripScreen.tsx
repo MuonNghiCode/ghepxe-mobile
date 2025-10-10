@@ -169,6 +169,7 @@ export default function DriverTripScreen() {
         <DriverRouteCard
           key={route.id}
           route={route}
+          variant="driver"
           onCancel={() => handleCancelRoute(route.id)}
         />
       ))}
