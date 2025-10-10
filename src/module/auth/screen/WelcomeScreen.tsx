@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import {
   Text,
   View,
@@ -52,13 +52,11 @@ export default function WelcomeScreen() {
     }))
   );
 
-  // Animation container style
   const animationContainerStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: animationTranslateY.value }],
   }));
 
   useEffect(() => {
-    // Animation logic
     logoOpacity.value = withTiming(1, {
       duration: 800,
       easing: Easing.out(Easing.quad),
@@ -95,7 +93,6 @@ export default function WelcomeScreen() {
         );
       });
 
-      // Animation container trượt lên
       animationTranslateY.value = withTiming(-screenHeight, {
         duration: 1200,
         easing: Easing.in(Easing.quad),
@@ -103,99 +100,99 @@ export default function WelcomeScreen() {
     }, 2500);
   }, []);
 
-  return (
-    <View style={tw`flex-1`}>
-      {/* WelcomeScreen luôn ở dưới */}
-      <ImageBackground
-        source={require("../../../assets/pictures/auth/background.png")}
-        style={tw`flex-1 justify-center items-center`}
-        resizeMode="cover"
+  // --- Render functions ---
+  const renderMainContent = () => (
+    <ImageBackground
+      source={require("../../../assets/pictures/auth/background.png")}
+      style={tw`flex-1 justify-center items-center`}
+      resizeMode="cover"
+    >
+      <View
+        style={[tw`flex-1 w-full justify-between items-center`, { zIndex: 3 }]}
       >
-        <View
-          style={[
-            tw`flex-1 w-full justify-between items-center`,
-            { zIndex: 3 },
-          ]}
-        >
-          <View style={tw`mt-60 items-center`}>
-            <Text
-              style={[
-                tw`text-white text-center text-3xl font-medium mb-2 max-w-[180px] font-bold`,
-              ]}
-            >
-              Trải nghiệm giao hàng tối ưu cùng
-            </Text>
-            <Text
-              style={[
-                tw`text-white text-center text-5xl mb-8`,
-                { fontFamily: "RobotoSerifBoldItalic" },
-              ]}
-            >
-              GHEPXE
-            </Text>
-          </View>
-          <View style={tw`mb-45 w-full items-center`}>
-            <TouchableOpacity
-              style={tw`bg-white/40 rounded-2xl w-70 py-3 mb-3`}
-              onPress={() => navigation.navigate("Login")}
-            >
-              <Text style={tw`text-center text-base text-white font-semibold`}>
-                Đăng Nhập
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-              <Text style={tw`text-center text-white text-base`}>
-                Tạo tài khoản
-              </Text>
-            </TouchableOpacity>
-          </View>
+        <View style={tw`mt-60 items-center`}>
+          <Text
+            style={[
+              tw`text-white text-center text-3xl font-medium mb-2 max-w-[180px] font-bold`,
+            ]}
+          >
+            Trải nghiệm giao hàng tối ưu cùng
+          </Text>
+          <Text
+            style={[
+              tw`text-white text-center text-5xl mb-8`,
+              { fontFamily: "RobotoSerifBoldItalic" },
+            ]}
+          >
+            GHEPXE
+          </Text>
         </View>
-      </ImageBackground>
+        <View style={tw`mb-45 w-full items-center`}>
+          <TouchableOpacity
+            style={tw`bg-white/40 rounded-2xl w-70 py-3 mb-3`}
+            onPress={() => navigation.navigate("Login")}
+          >
+            <Text style={tw`text-center text-base text-white font-semibold`}>
+              Đăng Nhập
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+            <Text style={tw`text-center text-white text-base`}>
+              Tạo tài khoản
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ImageBackground>
+  );
 
-      {/* Animation phủ lên trên */}
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          { zIndex: 10 },
-          animationContainerStyle,
-        ]}
-        pointerEvents="none"
-      >
-        <View style={tw`absolute inset-0 flex-row`}>
-          {barAnimations.map((_, index) => (
-            <Animated.View
-              key={index}
+  const renderAnimatedOverlay = () => (
+    <Animated.View
+      style={[StyleSheet.absoluteFill, { zIndex: 10 }, animationContainerStyle]}
+      pointerEvents="none"
+    >
+      <View style={tw`absolute inset-0 flex-row`}>
+        {barAnimations.map((_, index) => (
+          <Animated.View
+            key={index}
+            style={[
+              {
+                width: screenWidth / 5,
+                height: screenHeight,
+                backgroundColor: "#00A982",
+              },
+              barStyles[index],
+            ]}
+          >
+            <View
               style={[
+                tw`absolute top-0 w-full h-40`,
                 {
-                  width: screenWidth / 5,
-                  height: screenHeight,
-                  backgroundColor: "#00A982",
+                  backgroundColor: "rgba(255,255,255,0.05)",
+                  transform: [{ translateY: index * 30 }],
                 },
-                barStyles[index],
               ]}
-            >
-              <View
-                style={[
-                  tw`absolute top-0 w-full h-40`,
-                  {
-                    backgroundColor: "rgba(255,255,255,0.05)",
-                    transform: [{ translateY: index * 30 }],
-                  },
-                ]}
-              />
-            </Animated.View>
-          ))}
-        </View>
-        <View style={tw`flex-1 items-center justify-center z-10`}>
-          <Animated.View style={[tw`items-center`, logoAnimatedStyle]}>
-            <Image
-              source={require("../../../assets/pictures/logo-white.png")}
-              style={tw`w-60 h-60`}
-              resizeMode="contain"
             />
           </Animated.View>
-        </View>
-      </Animated.View>
+        ))}
+      </View>
+      <View style={tw`flex-1 items-center justify-center z-10`}>
+        <Animated.View style={[tw`items-center`, logoAnimatedStyle]}>
+          <Image
+            source={require("../../../assets/pictures/logowhite.png")}
+            style={tw`w-60 h-60`}
+            resizeMode="contain"
+          />
+        </Animated.View>
+      </View>
+    </Animated.View>
+  );
+
+  // --- Main render ---
+  return (
+    <View style={tw`flex-1`}>
+      {renderMainContent()}
+      {renderAnimatedOverlay()}
     </View>
   );
 }

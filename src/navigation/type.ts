@@ -8,7 +8,16 @@ export type AuthStackParamList = {
 
 export type DriverTabParamList = {
   DriverTabs: undefined;
+  CreateDriverRoute: undefined;
+  MapSelect: undefined;
+  ConfirmRoute: undefined;
+  RouteBilling: undefined;
+  RouteShipping: undefined;
+  DriverOrderDetail: undefined;
+  DriverOrder: undefined;
+  Order: { order: any };
 };
+
 export type UserTabParamList = {
   Billing: undefined;
   UserTabs: undefined;
@@ -18,6 +27,9 @@ export type UserTabParamList = {
   OrderBilling: undefined;
   OrderShipping: undefined;
   Matching: undefined;
+  UserOrderDetail: undefined;
+  Order: { order: any };
+  UserOrder: undefined;
 };
 
 export type RootStackParamList = {
@@ -37,6 +49,12 @@ export type RootStackParamList = {
       coords: any;
       address: string;
     };
-  }
+  };
+  CreateDriverRoute: {
+    mapLocation: {
+      coords: any;
+      address: string;
+    };
+  };
 };
 

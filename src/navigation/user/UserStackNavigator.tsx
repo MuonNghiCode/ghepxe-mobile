@@ -2,9 +2,9 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { UserTabNavigator } from "./UserTabNavigator";
 import { UserTabParamList } from "../type";
 import {
-  BillingAddress,
+  BillingAddressScreen,
   MapSelectScreen,
-  ShippingAddress,
+  ShippingAddressScreen,
 } from "src/module/address";
 import {
   ConfirmOrderScreen,
@@ -12,6 +12,7 @@ import {
   OrderShippingAddressScreen,
 } from "src/module/orders";
 import { MatchingRouteScreen } from "src/module/match";
+import { UserOrderDetailScreen } from "src/module/order";
 
 const Stack = createNativeStackNavigator<UserTabParamList>();
 
@@ -19,8 +20,8 @@ export default function UserStackNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="UserTabs" component={UserTabNavigator} />
-      <Stack.Screen name="Billing" component={BillingAddress} />
-      <Stack.Screen name="Shipping" component={ShippingAddress} />
+      <Stack.Screen name="Billing" component={BillingAddressScreen} />
+      <Stack.Screen name="Shipping" component={ShippingAddressScreen} />
       <Stack.Screen name="MapSelect" component={MapSelectScreen} />
       <Stack.Screen name="ConfirmOrder" component={ConfirmOrderScreen} />
       <Stack.Screen name="OrderBilling" component={OrderBillingAddressScreen} />
@@ -29,6 +30,7 @@ export default function UserStackNavigator() {
         component={OrderShippingAddressScreen}
       />
       <Stack.Screen name="Matching" component={MatchingRouteScreen} />
+      <Stack.Screen name="UserOrderDetail" component={UserOrderDetailScreen} />
     </Stack.Navigator>
   );
 }
