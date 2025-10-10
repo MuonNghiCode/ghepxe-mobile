@@ -55,7 +55,7 @@ export default function DriverOrderScreen() {
   }, []);
 
   return (
-    <View style={tw`flex-1 bg-gray-100`}>
+    <View style={tw`flex-1 bg-[#F8FFFE]`}>
       {/* Header */}
       <View style={tw`pt-12 pb-4 bg-white`}>
         <Text style={tw`text-lg font-semibold text-center text-black`}>
