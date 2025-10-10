@@ -1,6 +1,6 @@
 import { useAuth } from "../../../context/AuthContext";
-import UserTripScreen from "./UserTripScreen";
-import DriverTripScreen from "./DriverTripScreen";
+import DriverTripScreen from "./driver/DriverTripScreen";
+import UserTripScreen from "./user/UserTripScreen";
 
 export default function TripScreen() {
   const { role } = useAuth();
