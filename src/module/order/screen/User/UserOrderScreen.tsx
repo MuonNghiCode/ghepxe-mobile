@@ -48,58 +48,67 @@ export default function UserOrderScreen() {
     [navigation]
   );
 
+  const renderHeader = () => (
+    <View style={tw`pt-12 pb-4 bg-white`}>
+      <Text style={tw`text-lg font-semibold text-center text-black`}>
+        Đơn hàng
+      </Text>
+    </View>
+  );
+
+  const renderTabs = () => (
+    <View style={tw`flex-row px-4 py-2 bg-white`}>
+      {TABS.map((item) => (
+        <TouchableOpacity
+          key={item.key}
+          style={tw`mr-3`}
+          onPress={() => setTab(item.key)}
+        >
+          <Text
+            style={tw.style(
+              "px-4 py-2 rounded-full text-xs font-semibold",
+              tab === item.key
+                ? "bg-[#00A982] text-white"
+                : "bg-gray-100 text-gray-700"
+            )}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {item.label}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  const renderOrderList = () => (
+    <ScrollView style={tw`flex-1`} contentContainerStyle={tw`pt-2 pb-8 px-4`}>
+      {filteredOrders.map((order) => (
+        <UserOrderCard
+          key={order.id}
+          status={order.status}
+          productImage={order.productImage}
+          productName={order.productName}
+          quantity={order.quantity}
+          weight={order.weight}
+          price={order.price}
+          pickupAddress={order.pickupAddress}
+          deliveryAddress={order.deliveryAddress}
+          headerText={order.time}
+          tagText={order.tag}
+          showMore={order.quantity > 1}
+          onReview={() => {}}
+          onPress={() => handleCardPress(order)}
+        />
+      ))}
+    </ScrollView>
+  );
+
   return (
     <View style={tw`flex-1 bg-[#F8FFFE]`}>
-      {/* Header */}
-      <View style={tw`pt-12 pb-4 bg-white`}>
-        <Text style={tw`text-lg font-semibold text-center text-black`}>
-          Đơn hàng
-        </Text>
-      </View>
-      {/* Tabs */}
-      <View style={tw`flex-row px-4 py-2 bg-white`}>
-        {TABS.map((item) => (
-          <TouchableOpacity
-            key={item.key}
-            style={tw`mr-3`}
-            onPress={() => setTab(item.key)}
-          >
-            <Text
-              style={tw.style(
-                "px-4 py-2 rounded-full text-xs font-semibold",
-                tab === item.key
-                  ? "bg-[#00A982] text-white"
-                  : "bg-gray-100 text-gray-700"
-              )}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      {/* Content */}
-      <ScrollView style={tw`flex-1`} contentContainerStyle={tw`pt-2 pb-8 px-4`}>
-        {filteredOrders.map((order) => (
-          <UserOrderCard
-            key={order.id}
-            status={order.status}
-            productImage={order.productImage}
-            productName={order.productName}
-            quantity={order.quantity}
-            weight={order.weight}
-            price={order.price}
-            pickupAddress={order.pickupAddress}
-            deliveryAddress={order.deliveryAddress}
-            headerText={order.time}
-            tagText={order.tag}
-            showMore={order.quantity > 1}
-            onReview={() => {}}
-            onPress={() => handleCardPress(order)}
-          />
-        ))}
-      </ScrollView>
+      {renderHeader()}
+      {renderTabs()}
+      {renderOrderList()}
     </View>
   );
 }
