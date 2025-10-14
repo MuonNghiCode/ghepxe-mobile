@@ -14,37 +14,38 @@ import { useNavigation } from "@react-navigation/native";
 import { useToast } from "../../../hooks/useToast";
 import Toast from "@components/Toast";
 
-type Role = "user" | "driver";
-
 export default function LoginScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const { login } = useAuth();
   const navigation = useNavigation();
   const { toast, showError, showSuccess, hideToast } = useToast();
 
-  const fakeAccounts = [
-    { username: "user", password: "123456", role: "user" },
-    { username: "driver", password: "123456", role: "driver" },
-  ];
-
-  function handleLogin() {
+  async function handleLogin() {
     if (!username.trim() || !password.trim()) {
       showError("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
-    const found = fakeAccounts.find(
-      (acc) => acc.username === username && acc.password === password
-    );
-    if (found) {
-      showSuccess("Đăng nhập thành công!");
-      setTimeout(() => {
-        login(found.role as Role);
-      }, 1000);
-    } else {
-      showError("Tài khoản hoặc mật khẩu không đúng!");
+
+    setLoading(true);
+
+    try {
+      const result = await login({ email: username, password });
+
+      if (result.success) {
+        showSuccess("Đăng nhập thành công!");
+        // Navigation sẽ được xử lý tự động khi AuthContext cập nhật isLoggedIn
+      } else {
+        showError(result.message || "Đăng nhập thất bại!");
+      }
+    } catch (error) {
+      showError("Có lỗi xảy ra. Vui lòng thử lại!");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -87,11 +88,12 @@ export default function LoginScreen() {
         <Ionicons name="person" size={22} color="#888" />
         <TextInput
           style={tw`flex-1 py-3 pl-3 text-base`}
-          placeholder="Họ và Tên"
+          placeholder="Tên đăng nhập"
           value={username}
           onChangeText={setUsername}
           autoCapitalize="none"
           placeholderTextColor="#888"
+          editable={!loading}
         />
       </View>
       <View style={tw`flex-row items-center bg-gray-100 rounded-xl px-4 mb-5`}>
@@ -103,6 +105,7 @@ export default function LoginScreen() {
           onChangeText={setPassword}
           secureTextEntry={!showPass}
           placeholderTextColor="#888"
+          editable={!loading}
         />
         <Pressable onPress={() => setShowPass((v) => !v)}>
           <Ionicons
@@ -120,6 +123,7 @@ export default function LoginScreen() {
       <TouchableOpacity
         style={tw`flex-row items-center`}
         onPress={() => setRemember((v) => !v)}
+        disabled={loading}
       >
         <Ionicons
           name={remember ? "checkmark-circle" : "ellipse-outline"}
@@ -130,6 +134,7 @@ export default function LoginScreen() {
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() => navigation.navigate("ForgetPassword" as never)}
+        disabled={loading}
       >
         <Text style={tw`text-[#00A982]`}>Quên tài khoản ?</Text>
       </TouchableOpacity>
@@ -138,11 +143,15 @@ export default function LoginScreen() {
 
   const renderLoginButton = () => (
     <TouchableOpacity
-      style={[tw`rounded-full py-3 mb-6`, { backgroundColor: "#00A982" }]}
+      style={[
+        tw`rounded-full py-3 mb-6`,
+        { backgroundColor: loading ? "#ccc" : "#00A982" },
+      ]}
       onPress={handleLogin}
+      disabled={loading}
     >
       <Text style={tw`text-white text-center text-base font-bold`}>
-        Đăng Nhập
+        {loading ? "Đang đăng nhập..." : "Đăng Nhập"}
       </Text>
     </TouchableOpacity>
   );
@@ -155,21 +164,21 @@ export default function LoginScreen() {
         <View style={tw`w-20 h-0.5 bg-[#6B6B6B]`} />
       </View>
       <View style={tw`flex-row justify-center mb-6 gap-10`}>
-        <TouchableOpacity style={tw`mx-4`}>
+        <TouchableOpacity style={tw`mx-4`} disabled={loading}>
           <Image
             source={require("../../../assets/icons/zalo.png")}
             style={{ width: 36, height: 36 }}
             resizeMode="contain"
           />
         </TouchableOpacity>
-        <TouchableOpacity style={tw`mx-4`}>
+        <TouchableOpacity style={tw`mx-4`} disabled={loading}>
           <Image
             source={require("../../../assets/icons/google.png")}
             style={{ width: 36, height: 36 }}
             resizeMode="contain"
           />
         </TouchableOpacity>
-        <TouchableOpacity style={tw`mx-4`}>
+        <TouchableOpacity style={tw`mx-4`} disabled={loading}>
           <Image
             source={require("../../../assets/icons/facebook.png")}
             style={{ width: 36, height: 36 }}
@@ -187,6 +196,7 @@ export default function LoginScreen() {
       </Text>
       <TouchableOpacity
         onPress={() => navigation.navigate("Register" as never)}
+        disabled={loading}
       >
         <Text
           style={[

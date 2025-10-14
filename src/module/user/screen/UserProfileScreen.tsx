@@ -35,7 +35,7 @@ export default function UserProfileScreen() {
           title: "Xác nhận & Biên nhận điện tử",
           icon: "document-text-outline",
         },
-        { id: "4", title: "Theo dõi hành trình", icon: "location-outline" },
+        { id: "4", title: "Theo dõi hành trình", icon: "eye-outline" },
       ],
     },
     {
@@ -49,8 +49,8 @@ export default function UserProfileScreen() {
     {
       title: "Cơ hội hợp tác",
       items: [
-        { id: "8", title: "Ứng dụng đối tác", icon: "people-outline" },
-        { id: "9", title: "Tài xế hưu ưu cao thường", icon: "car-outline" },
+        { id: "8", title: "Đóng góp bản đồ", icon: "map-outline" },
+        { id: "9", title: "Trở thành đối tác của GhepXe", icon: "car-outline" },
       ],
     },
     {
@@ -71,8 +71,8 @@ export default function UserProfileScreen() {
         { id: "13", title: "Ngôn ngữ", icon: "language-outline" },
         {
           id: "14",
-          title: "Điều khoản & Bảo mật",
-          icon: "shield-checkmark-outline",
+          title: "Đăng nhập & Bảo mật",
+          icon: "lock-closed-outline",
         },
       ],
     },
@@ -113,9 +113,10 @@ export default function UserProfileScreen() {
     <View style={tw`ml-4 flex-1`}>
       <Text style={tw`text-lg font-semibold text-gray-800`}>{user.name}</Text>
       <View style={tw`flex-row items-center mt-1`}>
-        <Text style={tw`text-gray-600 text-base mr-2`}>{user.phone}</Text>
+        <Text style={tw`text-gray-600 text-base`}>{user.phone}</Text>
+        <View style={tw`h-4 w-px bg-gray-300 mx-3`} />
         <View
-          style={tw`flex-row items-center bg-[#00A982] px-2 py-0.5 rounded-full ml-1`}
+          style={tw`flex-row items-center bg-[#00A982] px-2 py-0.5 rounded-full`}
         >
           <Ionicons name="star" size={13} color="#fff" />
           <Text style={tw`text-white text-xs font-semibold ml-1`}>
