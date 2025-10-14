@@ -3,6 +3,7 @@ import tw from "twrnc";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../../context/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
+import LogoutButton from "src/components/LogoutButton";
 
 export default function UserProfileScreen() {
   const { logout } = useAuth();
@@ -207,15 +208,11 @@ export default function UserProfileScreen() {
 
   const renderLogoutButton = () => (
     <View style={tw`mx-4 mb-8`}>
-      <TouchableOpacity
-        style={tw`bg-red-500 rounded-2xl py-3 border border-red-600`}
-        onPress={logout}
-        activeOpacity={0.8}
-      >
-        <Text style={tw`text-white text-center text-base font-semibold`}>
-          Đăng xuất
-        </Text>
-      </TouchableOpacity>
+      <LogoutButton
+        style={tw`p-4 bg-red-50 rounded-lg`}
+        textStyle={tw`font-semibold`}
+        showConfirm={true}
+      />
     </View>
   );
 

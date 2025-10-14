@@ -7,82 +7,60 @@ import {
   TextInput,
   Pressable,
   Image,
+  ScrollView,
 } from "react-native";
 import tw from "twrnc";
 import { useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { useToast } from "../../../hooks/useToast";
+import { useForm } from "../../../hooks/useForm";
+import { useFormValidation } from "../../../hooks/useFormValidation";
+import { registerSchema, RegisterFormData } from "../../../schemas/authSchemas";
 import Toast from "@components/Toast";
+
+const initialFormValues = {
+  username: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  acceptPolicy: false,
+};
 
 export default function RegisterScreen() {
   const navigation = useNavigation();
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
-  const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Form fields - cập nhật theo API
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-
+  const { values, setValue } = useForm(initialFormValues);
+  const { fieldErrors, validate, clearFieldError, hasError, getError } =
+    useFormValidation(registerSchema);
   const { register } = useAuth();
   const { toast, showError, showSuccess, hideToast } = useToast();
 
-  const validateForm = () => {
-    if (!username.trim()) {
-      showError("Vui lòng nhập tên đăng nhập!");
-      return false;
+  const handleFieldChange = (field: keyof typeof values, value: any) => {
+    setValue(field, value);
+    if (hasError(field)) {
+      clearFieldError(field);
     }
-    if (!email.trim()) {
-      showError("Vui lòng nhập email!");
-      return false;
-    }
-    if (!email.includes("@")) {
-      showError("Email không hợp lệ!");
-      return false;
-    }
-    if (!password.trim()) {
-      showError("Vui lòng nhập mật khẩu!");
-      return false;
-    }
-    if (password.length < 6) {
-      showError("Mật khẩu phải có ít nhất 6 ký tự!");
-      return false;
-    }
-    if (password !== confirmPassword) {
-      showError("Mật khẩu xác nhận không khớp!");
-      return false;
-    }
-    if (!phone.trim()) {
-      showError("Vui lòng nhập số điện thoại!");
-      return false;
-    }
-    if (!address.trim()) {
-      showError("Vui lòng nhập địa chỉ!");
-      return false;
-    }
-    if (!checked) {
-      showError("Vui lòng chấp nhận chính sách điều khoản!");
-      return false;
-    }
-    return true;
   };
 
   const handleRegister = async () => {
-    if (!validateForm()) return;
+    const validationResult = validate(values);
+
+    if (!validationResult.isValid) {
+      if (validationResult.firstError) {
+        showError(validationResult.firstError);
+      }
+      return;
+    }
 
     setLoading(true);
     try {
       const result = await register({
-        username: username.trim(),
-        email: email.trim().toLowerCase(),
-        password,
-        phone: phone.trim(),
-        address: address.trim(),
+        username: values.username.trim(),
+        email: values.email.trim().toLowerCase(),
+        password: values.password,
       });
 
       if (result.success) {
@@ -127,116 +105,127 @@ export default function RegisterScreen() {
     </>
   );
 
+  const renderInputField = (
+    field: keyof typeof values,
+    placeholder: string,
+    icon: React.ReactNode,
+    options?: {
+      keyboardType?: any;
+      autoCapitalize?: any;
+      secureTextEntry?: boolean;
+      showPasswordToggle?: boolean;
+      onTogglePassword?: () => void;
+    }
+  ) => (
+    <View style={tw`mb-4`}>
+      <View
+        style={[
+          tw`flex-row items-center bg-gray-100 rounded-xl px-4`,
+          hasError(field) && tw`border border-red-500`,
+        ]}
+      >
+        {icon}
+        <TextInput
+          style={tw`flex-1 py-3 pl-3 text-base`}
+          placeholder={placeholder}
+          placeholderTextColor="#888"
+          value={values[field] as string}
+          onChangeText={(value) => handleFieldChange(field, value)}
+          editable={!loading}
+          keyboardType={options?.keyboardType}
+          autoCapitalize={options?.autoCapitalize || "none"}
+          secureTextEntry={options?.secureTextEntry}
+        />
+        {options?.showPasswordToggle && (
+          <Pressable onPress={options.onTogglePassword} disabled={loading}>
+            <Ionicons
+              name={options.secureTextEntry ? "eye-off" : "eye"}
+              size={22}
+              color="#888"
+            />
+          </Pressable>
+        )}
+      </View>
+      {hasError(field) && (
+        <Text style={tw`text-red-500 text-sm mt-1 ml-2`}>
+          {getError(field)}
+        </Text>
+      )}
+    </View>
+  );
+
   const renderInputFields = () => (
     <>
-      <View style={tw`flex-row items-center bg-gray-100 rounded-xl px-4 mb-4`}>
+      {renderInputField(
+        "username",
+        "Tên đăng nhập",
         <Ionicons name="person" size={22} color="#888" />
-        <TextInput
-          style={tw`flex-1 py-3 pl-3 text-base`}
-          placeholder="Tên đăng nhập"
-          placeholderTextColor="#888"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-          editable={!loading}
-        />
-      </View>
-      <View style={tw`flex-row items-center bg-gray-100 rounded-xl px-4 mb-4`}>
-        <MaterialIcons name="email" size={22} color="#888" />
-        <TextInput
-          style={tw`flex-1 py-3 pl-3 text-base`}
-          placeholder="Email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          placeholderTextColor="#888"
-          value={email}
-          onChangeText={setEmail}
-          editable={!loading}
-        />
-      </View>
-      <View style={tw`flex-row items-center bg-gray-100 rounded-xl px-4 mb-4`}>
-        <Ionicons name="call" size={22} color="#888" />
-        <TextInput
-          style={tw`flex-1 py-3 pl-3 text-base`}
-          placeholder="Số điện thoại"
-          keyboardType="phone-pad"
-          placeholderTextColor="#888"
-          value={phone}
-          onChangeText={setPhone}
-          editable={!loading}
-        />
-      </View>
-      <View style={tw`flex-row items-center bg-gray-100 rounded-xl px-4 mb-4`}>
-        <Ionicons name="location" size={22} color="#888" />
-        <TextInput
-          style={tw`flex-1 py-3 pl-3 text-base`}
-          placeholder="Địa chỉ"
-          placeholderTextColor="#888"
-          value={address}
-          onChangeText={setAddress}
-          editable={!loading}
-        />
-      </View>
-      <View style={tw`flex-row items-center bg-gray-100 rounded-xl px-4 mb-4`}>
-        <MaterialIcons name="lock" size={22} color="#888" />
-        <TextInput
-          style={tw`flex-1 py-3 pl-3 text-base`}
-          placeholder="Mật khẩu"
-          secureTextEntry={!showPass}
-          placeholderTextColor="#888"
-          value={password}
-          onChangeText={setPassword}
-          editable={!loading}
-        />
-        <Pressable onPress={() => setShowPass((v) => !v)} disabled={loading}>
-          <Ionicons
-            name={showPass ? "eye" : "eye-off"}
-            size={22}
-            color="#888"
-          />
-        </Pressable>
-      </View>
-      <View style={tw`flex-row items-center bg-gray-100 rounded-xl px-4 mb-4`}>
-        <MaterialIcons name="lock" size={22} color="#888" />
-        <TextInput
-          style={tw`flex-1 py-3 pl-3 text-base`}
-          placeholder="Xác nhận mật khẩu"
-          secureTextEntry={!showConfirmPass}
-          placeholderTextColor="#888"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          editable={!loading}
-        />
-        <Pressable
-          onPress={() => setShowConfirmPass((v) => !v)}
-          disabled={loading}
-        >
-          <Ionicons
-            name={showConfirmPass ? "eye" : "eye-off"}
-            size={22}
-            color="#888"
-          />
-        </Pressable>
-      </View>
+      )}
+
+      {renderInputField(
+        "email",
+        "Email",
+        <MaterialIcons name="email" size={22} color="#888" />,
+        { keyboardType: "email-address" }
+      )}
+
+      {renderInputField(
+        "password",
+        "Mật khẩu",
+        <MaterialIcons name="lock" size={22} color="#888" />,
+        {
+          secureTextEntry: !showPass,
+          showPasswordToggle: true,
+          onTogglePassword: () => setShowPass((v) => !v),
+        }
+      )}
+
+      {renderInputField(
+        "confirmPassword",
+        "Xác nhận mật khẩu",
+        <MaterialIcons name="lock" size={22} color="#888" />,
+        {
+          secureTextEntry: !showConfirmPass,
+          showPasswordToggle: true,
+          onTogglePassword: () => setShowConfirmPass((v) => !v),
+        }
+      )}
     </>
   );
 
   const renderPolicyCheckbox = () => (
-    <View style={tw`flex-row items-center mb-4`}>
-      <TouchableOpacity
-        onPress={() => setChecked((v) => !v)}
-        disabled={loading}
-      >
-        <Ionicons
-          name={checked ? "checkmark-circle" : "ellipse-outline"}
-          size={20}
-          color={checked ? "#00A982" : "#888"}
-        />
-      </TouchableOpacity>
-      <Text style={tw`ml-2 text-gray-700`}>
-        Chấp nhận với{" "}
-        <Text style={tw`text-[#00A982] underline`}>Chính Sách Điều Khoản</Text>
-      </Text>
+    <View style={tw`mb-4`}>
+      <View style={tw`flex-row items-center`}>
+        <TouchableOpacity
+          onPress={() =>
+            handleFieldChange("acceptPolicy", !values.acceptPolicy)
+          }
+          disabled={loading}
+        >
+          <Ionicons
+            name={values.acceptPolicy ? "checkmark-circle" : "ellipse-outline"}
+            size={20}
+            color={
+              values.acceptPolicy
+                ? "#00A982"
+                : hasError("acceptPolicy")
+                ? "#FF0000"
+                : "#888"
+            }
+          />
+        </TouchableOpacity>
+        <Text style={tw`ml-2 text-gray-700`}>
+          Chấp nhận với{" "}
+          <Text style={tw`text-[#00A982] underline`}>
+            Chính Sách Điều Khoản
+          </Text>
+        </Text>
+      </View>
+      {hasError("acceptPolicy") && (
+        <Text style={tw`text-red-500 text-sm mt-1 ml-2`}>
+          {getError("acceptPolicy")}
+        </Text>
+      )}
     </View>
   );
 
@@ -306,14 +295,18 @@ export default function RegisterScreen() {
   return (
     <View style={tw`flex-1 bg-white`}>
       {renderBackButton()}
-      <View style={tw`px-6 pt-24`}>
+      <ScrollView
+        style={tw`flex-1`}
+        contentContainerStyle={tw`px-6 pt-24 pb-8`}
+        showsVerticalScrollIndicator={false}
+      >
         {renderTitle()}
         {renderInputFields()}
         {renderPolicyCheckbox()}
         {renderRegisterButton()}
         {renderSocialLogin()}
         {renderFooter()}
-      </View>
+      </ScrollView>
       <Toast
         visible={toast.visible}
         message={toast.message}

@@ -7,6 +7,8 @@ export interface RegisterRequest {
     username: string;  
     email: string;
     password: string;
-    phone: string;     
-    address: string;  
+}
+
+export interface LogoutRequest {
+    refreshToken: string;
 }

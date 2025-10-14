@@ -67,6 +67,20 @@ export interface ActualRegisterResponse {
     };
 }
 
+export interface LogoutResponseData {
+    message: string;
+}
+
+export type LogoutResponse = LogoutResponseData;
 export type RegisterResponse = ActualRegisterResponse;
 export type LoginResponse = ActualLoginResponse;
 export type BaseResponse = ResponseModel<null>;
+
+// Thêm type cho error response mới
+export interface ApiErrorResponse {
+    type: string;
+    status: number;
+    detail: string;
+    errors: any;
+}
+

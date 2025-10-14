@@ -1,17 +1,19 @@
-export * from './api';
-export { default as DEBOUNCE_DELAYS } from './debounce';
+export * from "./api";
+
+export { default as DEBOUNCE_DELAYS } from "./debounce";
 
 export const APP_CONFIG = {
-  NAME: 'GhepXe',
-  VERSION: '1.0.0',
-  DESCRIPTION: 'Ứng dụng ghép chuyến nhanh chóng và tiện lợi',
+  NAME: "GhepXe",
+  VERSION: "1.0.0",
+  DESCRIPTION: "Ứng dụng ghép chuyến nhanh chóng và tiện lợi",
 } as const;
 
 export const STORAGE_KEYS = {
-  TOKEN: 'token',
-  USER: 'user',
-  THEME: 'theme',
-  LANGUAGE: 'language',
+  TOKEN: "ACCESS_TOKEN",
+  REFRESH_TOKEN: "REFRESH_TOKEN",
+  USER: "USER_DATA",
+  THEME: "USER_THEME",
+  LANGUAGE: "USER_LANGUAGE",
 } as const;
 
 export const PAGINATION = {
@@ -31,13 +33,13 @@ export const VALIDATION = {
 
 export const ROUTES = {
   AUTH: {
-    LOGIN: 'LoginScreen',
-    REGISTER: 'RegisterScreen',
-    FORGOT_PASSWORD: 'ForgotPasswordScreen',
+    LOGIN: "LoginScreen",
+    REGISTER: "RegisterScreen",
+    FORGOT_PASSWORD: "ForgotPasswordScreen",
   },
   MAIN: {
     HOME: "HomeScreen",
-    PROFILE: 'ProfileScreen',
-    SETTINGS: 'SettingsScreen',
+    PROFILE: "ProfileScreen",
+    SETTINGS: "SettingsScreen",
   },
 } as const;
