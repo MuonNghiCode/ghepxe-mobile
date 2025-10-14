@@ -16,6 +16,7 @@ export type DriverTabParamList = {
   DriverOrderDetail: undefined;
   DriverOrder: undefined;
   Order: { order: any };
+  EditProfile: undefined;
 };
 
 export type UserTabParamList = {
@@ -30,6 +31,7 @@ export type UserTabParamList = {
   UserOrderDetail: undefined;
   Order: { order: any };
   UserOrder: undefined;
+  EditProfile: undefined;
 };
 
 export type RootStackParamList = {
