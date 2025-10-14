@@ -12,6 +12,9 @@ import tw from "twrnc";
 import { Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useCurrentLocation } from "src/hooks/useCurrentLocation";
+import { useAuth } from "src/context/AuthContext";
+import { useProfile } from "src/hooks/useProfile";
+import UserAvatar, { useUserInfo } from "src/components/UserAvatar";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -80,6 +83,9 @@ export default function UserHomeScreen() {
   const [showAllServices, setShowAllServices] = useState(false);
 
   const { address: pickupLocation, loading, refresh } = useCurrentLocation();
+  const { user } = useAuth();
+  const { profile, fetchProfile } = useProfile();
+  const { displayName } = useUserInfo();
 
   const flatListRef = useRef<FlatList<any>>(null);
   const autoScrollInterval = useRef<NodeJS.Timeout | null>(null);
@@ -102,6 +108,13 @@ export default function UserHomeScreen() {
     }),
     []
   );
+
+  // Lấy thông tin user khi component mount
+  useEffect(() => {
+    if (!profile && user) {
+      fetchProfile();
+    }
+  }, [user, profile, fetchProfile]);
 
   const startAutoScroll = useCallback(() => {
     autoScrollInterval.current = setInterval(() => {
@@ -143,6 +156,10 @@ export default function UserHomeScreen() {
     [startAutoScroll, stopAutoScroll]
   );
 
+  const handleAvatarPress = useCallback(() => {
+    navigation.navigate("User" as never);
+  }, [navigation]);
+
   // --- Render functions ---
   const renderHeader = () => (
     <View style={tw`relative`}>
@@ -152,20 +169,24 @@ export default function UserHomeScreen() {
         resizeMode="cover"
       />
       <View style={[tw`absolute inset-0`, overlayStyle]} />
-      <TouchableOpacity
-        style={tw`absolute top-12 right-6`}
-        onPress={() => navigation.navigate("User" as never)}
-      >
-        <View
-          style={tw`w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-[#00A982] items-center justify-center`}
-        >
-          <Text style={tw`text-white font-bold text-lg`}>P</Text>
-        </View>
-      </TouchableOpacity>
+
+      {/* User Avatar - sử dụng component */}
+      <View style={tw`absolute top-12 right-6`}>
+        <UserAvatar
+          size="medium"
+          onPress={handleAvatarPress}
+          style={tw`shadow-lg`}
+        />
+      </View>
+
+      {/* Welcome Message */}
       <View style={tw`absolute bottom-30 left-6`}>
+        <Text style={tw`text-white/80 text-sm mb-1`}>
+          Xin chào, {displayName}!
+        </Text>
         <Text
           style={[
-            tw`text-white text-3xl max-w-[160px]`,
+            tw`text-white text-3xl max-w-[200px]`,
             { fontFamily: "RobotoSerifSemiBold", lineHeight: 32 },
           ]}
         >

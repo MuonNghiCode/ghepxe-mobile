@@ -12,39 +12,62 @@ import { useAuth } from "../../../context/AuthContext";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useToast } from "../../../hooks/useToast";
+import { useForm } from "../../../hooks/useForm";
+import { useFormValidation } from "../../../hooks/useFormValidation";
+import { loginSchema } from "../../../schemas/authSchemas";
 import Toast from "@components/Toast";
 
-type Role = "user" | "driver";
+const initialFormValues = {
+  email: "",
+  password: "",
+};
 
 export default function LoginScreen() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const { values, setValue } = useForm(initialFormValues);
+  const { validate, hasError, getError, clearFieldError } =
+    useFormValidation(loginSchema);
   const { login } = useAuth();
   const navigation = useNavigation();
   const { toast, showError, showSuccess, hideToast } = useToast();
 
-  const fakeAccounts = [
-    { username: "user", password: "123456", role: "user" },
-    { username: "driver", password: "123456", role: "driver" },
-  ];
+  const handleFieldChange = (field: keyof typeof values, value: string) => {
+    setValue(field, value);
+    if (hasError(field)) {
+      clearFieldError(field);
+    }
+  };
 
-  function handleLogin() {
-    if (!username.trim() || !password.trim()) {
-      showError("Vui lòng nhập đầy đủ thông tin!");
+  async function handleLogin() {
+    const validationResult = validate(values);
+
+    if (!validationResult.isValid) {
+      if (validationResult.firstError) {
+        showError(validationResult.firstError);
+      }
       return;
     }
-    const found = fakeAccounts.find(
-      (acc) => acc.username === username && acc.password === password
-    );
-    if (found) {
-      showSuccess("Đăng nhập thành công!");
-      setTimeout(() => {
-        login(found.role as Role);
-      }, 1000);
-    } else {
-      showError("Tài khoản hoặc mật khẩu không đúng!");
+
+    setLoading(true);
+
+    try {
+      const result = await login({
+        email: values.email.trim(),
+        password: values.password,
+      });
+
+      if (result.success) {
+        showSuccess("Đăng nhập thành công!");
+      } else {
+        showError(result.message || "Đăng nhập thất bại!");
+      }
+    } catch (error) {
+      showError("Có lỗi xảy ra. Vui lòng thử lại!");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -83,34 +106,61 @@ export default function LoginScreen() {
 
   const renderInputFields = () => (
     <>
-      <View style={tw`flex-row items-center bg-gray-100 rounded-xl px-4 mb-5`}>
-        <Ionicons name="person" size={22} color="#888" />
-        <TextInput
-          style={tw`flex-1 py-3 pl-3 text-base`}
-          placeholder="Họ và Tên"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-          placeholderTextColor="#888"
-        />
-      </View>
-      <View style={tw`flex-row items-center bg-gray-100 rounded-xl px-4 mb-5`}>
-        <MaterialIcons name="lock" size={22} color="#888" />
-        <TextInput
-          style={tw`flex-1 py-3 pl-3 text-base`}
-          placeholder="Mật khẩu"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPass}
-          placeholderTextColor="#888"
-        />
-        <Pressable onPress={() => setShowPass((v) => !v)}>
-          <Ionicons
-            name={showPass ? "eye" : "eye-off"}
-            size={22}
-            color="#888"
+      <View style={tw`mb-4`}>
+        <View
+          style={[
+            tw`flex-row items-center bg-gray-100 rounded-xl px-4`,
+            hasError("email") && tw`border border-red-500`,
+          ]}
+        >
+          <Ionicons name="mail" size={22} color="#888" />
+          <TextInput
+            style={tw`flex-1 py-3 pl-3 text-base`}
+            placeholder="Email"
+            value={values.email}
+            onChangeText={(value) => handleFieldChange("email", value)}
+            autoCapitalize="none"
+            placeholderTextColor="#888"
+            editable={!loading}
           />
-        </Pressable>
+        </View>
+        {hasError("email") && (
+          <Text style={tw`text-red-500 text-sm mt-1 ml-2`}>
+            {getError("email")}
+          </Text>
+        )}
+      </View>
+
+      <View style={tw`mb-5`}>
+        <View
+          style={[
+            tw`flex-row items-center bg-gray-100 rounded-xl px-4`,
+            hasError("password") && tw`border border-red-500`,
+          ]}
+        >
+          <MaterialIcons name="lock" size={22} color="#888" />
+          <TextInput
+            style={tw`flex-1 py-3 pl-3 text-base`}
+            placeholder="Mật khẩu"
+            value={values.password}
+            onChangeText={(value) => handleFieldChange("password", value)}
+            secureTextEntry={!showPass}
+            placeholderTextColor="#888"
+            editable={!loading}
+          />
+          <Pressable onPress={() => setShowPass((v) => !v)}>
+            <Ionicons
+              name={showPass ? "eye" : "eye-off"}
+              size={22}
+              color="#888"
+            />
+          </Pressable>
+        </View>
+        {hasError("password") && (
+          <Text style={tw`text-red-500 text-sm mt-1 ml-2`}>
+            {getError("password")}
+          </Text>
+        )}
       </View>
     </>
   );
@@ -120,6 +170,7 @@ export default function LoginScreen() {
       <TouchableOpacity
         style={tw`flex-row items-center`}
         onPress={() => setRemember((v) => !v)}
+        disabled={loading}
       >
         <Ionicons
           name={remember ? "checkmark-circle" : "ellipse-outline"}
@@ -130,6 +181,7 @@ export default function LoginScreen() {
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() => navigation.navigate("ForgetPassword" as never)}
+        disabled={loading}
       >
         <Text style={tw`text-[#00A982]`}>Quên tài khoản ?</Text>
       </TouchableOpacity>
@@ -138,11 +190,15 @@ export default function LoginScreen() {
 
   const renderLoginButton = () => (
     <TouchableOpacity
-      style={[tw`rounded-full py-3 mb-6`, { backgroundColor: "#00A982" }]}
+      style={[
+        tw`rounded-full py-3 mb-6`,
+        { backgroundColor: loading ? "#ccc" : "#00A982" },
+      ]}
       onPress={handleLogin}
+      disabled={loading}
     >
       <Text style={tw`text-white text-center text-base font-bold`}>
-        Đăng Nhập
+        {loading ? "Đang đăng nhập..." : "Đăng Nhập"}
       </Text>
     </TouchableOpacity>
   );
@@ -155,21 +211,21 @@ export default function LoginScreen() {
         <View style={tw`w-20 h-0.5 bg-[#6B6B6B]`} />
       </View>
       <View style={tw`flex-row justify-center mb-6 gap-10`}>
-        <TouchableOpacity style={tw`mx-4`}>
+        <TouchableOpacity style={tw`mx-4`} disabled={loading}>
           <Image
             source={require("../../../assets/icons/zalo.png")}
             style={{ width: 36, height: 36 }}
             resizeMode="contain"
           />
         </TouchableOpacity>
-        <TouchableOpacity style={tw`mx-4`}>
+        <TouchableOpacity style={tw`mx-4`} disabled={loading}>
           <Image
             source={require("../../../assets/icons/google.png")}
             style={{ width: 36, height: 36 }}
             resizeMode="contain"
           />
         </TouchableOpacity>
-        <TouchableOpacity style={tw`mx-4`}>
+        <TouchableOpacity style={tw`mx-4`} disabled={loading}>
           <Image
             source={require("../../../assets/icons/facebook.png")}
             style={{ width: 36, height: 36 }}
@@ -187,6 +243,7 @@ export default function LoginScreen() {
       </Text>
       <TouchableOpacity
         onPress={() => navigation.navigate("Register" as never)}
+        disabled={loading}
       >
         <Text
           style={[

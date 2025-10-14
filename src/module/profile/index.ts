@@ -1,0 +1,1 @@
+export { default as EditProfileScreen } from "./screen/EditProfileScreen";
