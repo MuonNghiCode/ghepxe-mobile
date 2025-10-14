@@ -1,7 +1,13 @@
-import React, { createContext, useState, useContext, ReactNode } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authService } from "src/service/authService";
-import { LoginRequest, RegisterRequest } from "src/types";
+import { LoginRequest, RegisterRequest, ProfileData } from "src/types";
 import { STORAGE_KEYS } from "src/constants";
 
 type Role = "user" | "driver" | null;
@@ -18,6 +24,12 @@ interface AuthContextType {
     credentials: RegisterRequest
   ) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<{ success: boolean; message?: string }>;
+  getProfile: () => Promise<{
+    success: boolean;
+    data?: ProfileData;
+    message?: string;
+  }>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -28,6 +40,8 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => ({ success: false }),
   register: async () => ({ success: false }),
   logout: async () => ({ success: false }),
+  getProfile: async () => ({ success: false }),
+  refreshProfile: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -39,9 +53,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
 
+  // Auto-load saved user data khi app khởi động
+  useEffect(() => {
+    const loadSavedUserData = async () => {
+      try {
+        const savedToken = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
+        const savedRefreshToken = await AsyncStorage.getItem(
+          STORAGE_KEYS.REFRESH_TOKEN
+        );
+        const savedUser = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+
+        if (savedToken && savedUser) {
+          setToken(savedToken);
+          setRefreshToken(savedRefreshToken);
+          const userData = JSON.parse(savedUser);
+          setUser(userData);
+
+          const userRole = userData.roles?.includes("Driver")
+            ? "driver"
+            : "user";
+          setRole(userRole);
+          setIsLoggedIn(true);
+
+          // Auto-refresh profile khi app start
+          setTimeout(() => {
+            getProfile();
+          }, 1000);
+        }
+      } catch (error) {
+        console.error("Error loading saved user data:", error);
+      }
+    };
+
+    loadSavedUserData();
+  }, []);
+
   const login = async (credentials: LoginRequest) => {
     try {
-      console.log("Starting login process...");
       const res = await authService.signin(credentials);
 
       if (res?.isSuccess && res?.value?.accessToken && res?.value?.user) {
@@ -54,17 +102,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRefreshToken(res.value.refreshToken);
         setUser(res.value.user);
 
-        // Lưu vào AsyncStorage
         await AsyncStorage.multiSet([
           [STORAGE_KEYS.TOKEN, res.value.accessToken],
           [STORAGE_KEYS.REFRESH_TOKEN, res.value.refreshToken],
           [STORAGE_KEYS.USER, JSON.stringify(res.value.user)],
         ]);
 
+        // Gọi getProfile để lấy thông tin đầy đủ (bao gồm phone)
+        setTimeout(async () => {
+          try {
+            await getProfile();
+          } catch (error) {
+            console.log("Could not fetch profile after login:", error);
+          }
+        }, 500);
+
         return { success: true, message: "Đăng nhập thành công" };
       }
 
-      // Nếu response không success nhưng có cấu trúc API đúng
       if (res?.isFailure) {
         const errorDescription = res?.error?.description || "";
         let errorMessage = "Đăng nhập thất bại";
@@ -99,17 +154,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         message: "Sai tài khoản hoặc mật khẩu!",
       };
     } catch (err: any) {
-      console.error("Login context error:", {
+      console.error("❌ Login context error:", {
         status: err?.response?.status,
         data: err?.response?.data,
         message: err?.message,
       });
 
-      // Xử lý lỗi HTTP status codes với cấu trúc mới
       if (err?.response?.status === 400) {
         const errorData = err?.response?.data;
 
-        // Xử lý cấu trúc error mới từ API
         if (errorData?.detail) {
           const detail = errorData.detail.toLowerCase();
 
@@ -137,10 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               message: errorData.detail,
             };
           }
-        }
-
-        // Fallback cho cấu trúc cũ
-        else if (errorData?.error?.description) {
+        } else if (errorData?.error?.description) {
           return {
             success: false,
             message: errorData.error.description,
@@ -197,22 +247,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const getProfile = async () => {
+    try {
+      console.log("📋 Getting user profile...");
+      const res = await authService.getProfile();
+
+      if (res?.isSuccess && res?.value) {
+        // Cập nhật user data trong context
+        setUser(res.value);
+
+        // Cập nhật role nếu có thay đổi
+        const userRole = res.value.roles.includes("Driver") ? "driver" : "user";
+        setRole(userRole);
+
+        // Lưu vào AsyncStorage
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.USER,
+          JSON.stringify(res.value)
+        );
+
+        return {
+          success: true,
+          data: res.value,
+          message: "Lấy thông tin thành công",
+        };
+      }
+
+      return {
+        success: false,
+        message: res?.error?.description || "Không thể lấy thông tin profile",
+      };
+    } catch (err: any) {
+      console.error("❌ Get profile error:", err);
+
+      if (err?.response?.status === 401) {
+        // Token hết hạn, logout user
+        await logout();
+        return {
+          success: false,
+          message: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+        };
+      }
+
+      return {
+        success: false,
+        message:
+          err?.response?.data?.detail || "Không thể lấy thông tin profile",
+      };
+    }
+  };
+
+  const refreshProfile = async () => {
+    try {
+      await getProfile();
+    } catch (error) {
+      console.error("Refresh profile error:", error);
+    }
+  };
+
   const logout = async () => {
     try {
-      // Gọi API logout nếu có refreshToken
       if (refreshToken) {
         const res = await authService.logout({ refreshToken });
         console.log("Logout API response:", res);
       }
 
-      // Clear state
       setIsLoggedIn(false);
       setRole(null);
       setToken(null);
       setRefreshToken(null);
       setUser(null);
 
-      // Clear AsyncStorage
       await AsyncStorage.multiRemove([
         STORAGE_KEYS.TOKEN,
         STORAGE_KEYS.REFRESH_TOKEN,
@@ -223,7 +328,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err: any) {
       console.error("Logout error:", err);
 
-      // Vẫn clear local state ngay cả khi API fail
       setIsLoggedIn(false);
       setRole(null);
       setToken(null);
@@ -238,14 +342,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return {
         success: true,
-        message: "Đăng xuất thành công", // Vẫn thành công vì đã clear local
+        message: "Đăng xuất thành công",
       };
     }
   };
 
   return (
     <AuthContext.Provider
-      value={{ isLoggedIn, role, token, user, login, register, logout }}
+      value={{
+        isLoggedIn,
+        role,
+        token,
+        user,
+        login,
+        register,
+        logout,
+        getProfile,
+        refreshProfile,
+      }}
     >
       {children}
     </AuthContext.Provider>

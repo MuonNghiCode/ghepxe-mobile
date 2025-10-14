@@ -2,26 +2,36 @@ import { Text, View, Image, TouchableOpacity, ScrollView } from "react-native";
 import tw from "twrnc";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../../context/AuthContext";
+import { useProfile } from "src/hooks/useProfile";
+import { useUserInfo } from "src/components/UserAvatar";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { useEffect } from "react";
 import LogoutButton from "src/components/LogoutButton";
 
 export default function UserProfileScreen() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const { profile, fetchProfile } = useProfile();
+  const { userInfo, displayName, initials } = useUserInfo();
+  const navigation = useNavigation();
 
-  // Giả lập dữ liệu user
-  const user = {
-    name: "Phạm Minh Quân",
-    phone: "037xxxxxxx",
-    avatar: null,
-    rating: 5.0,
-    co2: "xx",
-  };
+  // Lấy thông tin user khi component mount
+  useEffect(() => {
+    if (!profile && user) {
+      fetchProfile();
+    }
+  }, [user, profile, fetchProfile]);
 
-  // Lấy chữ cái đầu của tên user
-  const getInitial = (name: string) => {
-    if (!name) return "";
-    const parts = name.trim().split(" ");
-    return parts[parts.length - 1][0]?.toUpperCase() || "";
+  // Lấy thông tin user từ profile hoặc fallback sang user từ login
+  const currentUserInfo = profile || user;
+
+  // Format phone number
+  const formatPhoneNumber = (phone: string | null | undefined) => {
+    if (!phone) return "Chưa cập nhật";
+    if (phone.length >= 7) {
+      return phone.slice(0, 3) + "xxxxxxx";
+    }
+    return phone;
   };
 
   // Menu sections
@@ -81,55 +91,76 @@ export default function UserProfileScreen() {
 
   const handleMenuPress = (itemId: string) => {
     console.log(`Pressed item: ${itemId}`);
-    // Xử lý navigation tại đây
+
+    // Xử lý navigation cho các menu items
+    switch (itemId) {
+      case "14": // Đăng nhập & Bảo mật - chuyển đến EditProfileScreen
+        navigation.navigate("EditProfile" as never);
+        break;
+      case "1": // Tạo đơn ghép mới
+        // navigation.navigate("CreateOrder" as never);
+        break;
+      case "2": // Đơn hàng đã ghép
+        // navigation.navigate("OrderHistory" as never);
+        break;
+      // Thêm các case khác nếu cần
+      default:
+        console.log(`Menu item ${itemId} not implemented yet`);
+    }
+  };
+
+  const handleAvatarPress = () => {
+    navigation.navigate("EditProfile" as never);
   };
 
   // --- Render functions ---
   const renderUserAvatar = () => (
-    <View>
-      {user.avatar ? (
-        <Image
-          source={user.avatar}
-          style={tw`w-16 h-16 rounded-full border-2 border-[#00A982]`}
-        />
-      ) : (
+    <TouchableOpacity onPress={handleAvatarPress} activeOpacity={0.8}>
+      <View style={tw`relative`}>
         <View
-          style={tw`w-16 h-16 rounded-full border-2 border-[#00A982] bg-gray-200 items-center justify-center`}
+          style={tw`w-16 h-16 rounded-full border-2 border-[#00A982] bg-[#00A982] items-center justify-center`}
         >
-          <Text style={tw`text-3xl font-bold text-[#00A982]`}>
-            {getInitial(user.name)}
-          </Text>
+          <Text style={tw`text-3xl font-bold text-white`}>{initials}</Text>
         </View>
-      )}
-      <TouchableOpacity
-        style={tw`absolute bottom-0 right-0 bg-white rounded-full p-1 border border-gray-200`}
-        activeOpacity={0.7}
-      >
-        <Ionicons name="pencil" size={16} color="#00A982" />
-      </TouchableOpacity>
-    </View>
+        <View
+          style={tw`absolute bottom-0 right-0 bg-white rounded-full p-1 border border-gray-200`}
+        >
+          <Ionicons name="pencil" size={16} color="#00A982" />
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 
   const renderUserInfo = () => (
     <View style={tw`ml-4 flex-1`}>
-      <Text style={tw`text-lg font-semibold text-gray-800`}>{user.name}</Text>
+      <Text style={tw`text-lg font-semibold text-gray-800`}>{displayName}</Text>
       <View style={tw`flex-row items-center mt-1`}>
-        <Text style={tw`text-gray-600 text-base`}>{user.phone}</Text>
+        <Text style={tw`text-gray-600 text-base`}>{currentUserInfo.phone}</Text>
         <View style={tw`h-4 w-px bg-gray-300 mx-3`} />
         <View
           style={tw`flex-row items-center bg-[#00A982] px-2 py-0.5 rounded-full`}
         >
           <Ionicons name="star" size={13} color="#fff" />
-          <Text style={tw`text-white text-xs font-semibold ml-1`}>
-            {user.rating.toFixed(1)}
-          </Text>
+          <Text style={tw`text-white text-xs font-semibold ml-1`}>5.0</Text>
         </View>
       </View>
+
+      {/* Hiển thị phone warning nếu chưa có */}
+      {!currentUserInfo?.phone && (
+        <TouchableOpacity
+          style={tw`bg-orange-50 px-2 py-1 rounded mt-1`}
+          onPress={handleAvatarPress}
+        >
+          <Text style={tw`text-orange-600 text-xs`}>
+            Cập nhật số điện thoại →
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
   const renderUserHeader = () => (
-    <View style={tw`bg-white px-5 pt-5 pb-2 `}>
+    <View style={tw`bg-white px-5 pt-5 pb-2`}>
       <View style={tw`flex-row items-center`}>
         {renderUserAvatar()}
         {renderUserInfo()}
@@ -143,7 +174,9 @@ export default function UserProfileScreen() {
       <View style={tw`flex-1`}>
         <Text style={tw`text-gray-600 mb-1`}>Bạn đã góp phần giảm</Text>
         <View style={tw`flex-row items-end mb-1`}>
-          <Text style={tw`text-2xl font-bold text-[#00A982]`}>{user.co2}</Text>
+          <Text style={tw`text-2xl font-bold text-[#00A982]`}>
+            {currentUserInfo?.shipRequestsCount || 0}
+          </Text>
           <Text style={tw`text-lg font-bold text-[#00A982] ml-1`}>kg CO₂</Text>
         </View>
         <Text style={tw`text-gray-600 mb-2`}>ra môi trường</Text>
@@ -215,6 +248,16 @@ export default function UserProfileScreen() {
       />
     </View>
   );
+
+  // Loading state
+  if (!currentUserInfo) {
+    return (
+      <SafeAreaView style={tw`flex-1 bg-white items-center justify-center`}>
+        <Ionicons name="person-circle-outline" size={64} color="#D1D5DB" />
+        <Text style={tw`text-gray-500 mt-4`}>Đang tải thông tin...</Text>
+      </SafeAreaView>
+    );
+  }
 
   // --- Main render ---
   return (

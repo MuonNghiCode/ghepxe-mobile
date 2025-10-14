@@ -72,7 +72,7 @@ export interface LogoutResponseData {
 }
 
 export type LogoutResponse = LogoutResponseData;
-export type RegisterResponse = ActualRegisterResponse;
+export type RegisterResponse = ActualRegisterResponse;  
 export type LoginResponse = ActualLoginResponse;
 export type BaseResponse = ResponseModel<null>;
 
@@ -83,4 +83,30 @@ export interface ApiErrorResponse {
     detail: string;
     errors: any;
 }
+
+// Thêm type cho profile response
+export interface ProfileData {
+    userId: string;
+    username: string;
+    email: string;
+    phone: string;
+    address: string;
+    status: string;
+    createdDate: string;
+    modifiedDate: string;
+    roles: string[];
+    shipRequestsCount: number;
+}
+
+export interface ActualProfileResponse {
+    value: ProfileData;
+    isSuccess: boolean;
+    isFailure: boolean;
+    error: {
+        code: string;
+        description: string;
+    };
+}
+
+export type ProfileResponse = ActualProfileResponse;
 
