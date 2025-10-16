@@ -32,6 +32,8 @@ export default function MapSelectScreen({ route }: any) {
   const slideAnim = useState(new Animated.Value(SCREEN_HEIGHT))[0];
   const fadeAnim = useState(new Animated.Value(0))[0];
 
+  const returnScreen = route.params?.returnScreen || "Billing";
+
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -40,13 +42,31 @@ export default function MapSelectScreen({ route }: any) {
         return;
       }
       let location = await Location.getCurrentPositionAsync({});
-      setRegion({
+      const currentRegion = {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
-      });
+      };
+      setRegion(currentRegion);
+      setSelected(currentRegion);
       setLoading(false);
+
+      // Get address for current location
+      try {
+        let addressArr = await Location.reverseGeocodeAsync({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        if (addressArr && addressArr.length > 0) {
+          const { street, name, district, city } = addressArr[0];
+          setAddress(
+            [street || name, district, city].filter(Boolean).join(", ")
+          );
+        }
+      } catch (error) {
+        console.error("Error getting address:", error);
+      }
 
       // Animate bottom sheet
       Animated.parallel([
@@ -87,12 +107,13 @@ export default function MapSelectScreen({ route }: any) {
 
   const handleConfirm = () => {
     if (selected) {
-      navigation.navigate(route.params?.returnScreen || "Billing", {
+      // Trả về địa chỉ cho returnScreen, sau đó returnScreen sẽ chuyển sang ConfirmOrder
+      navigation.navigate(returnScreen, {
         mapLocation: {
           coords: selected,
           address,
         },
-      });
+      } as never);
     }
   };
 
@@ -168,6 +189,7 @@ export default function MapSelectScreen({ route }: any) {
           <MapView
             style={tw`flex-1`}
             initialRegion={region}
+            region={region}
             onPress={handleMapPress}
             showsUserLocation={true}
             showsMyLocationButton={false}

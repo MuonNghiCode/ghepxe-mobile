@@ -21,6 +21,11 @@ import {
   HelpItemProps,
   HelpItemType,
 } from "src/types/address.interface,";
+import { useOrder } from "src/context/OrderContext";
+import { useToast } from "src/hooks/useToast";
+import Toast from "src/components/Toast";
+import * as Location from "expo-location";
+import { useFocusEffect } from "@react-navigation/native";
 
 type ShippingAddressNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -125,7 +130,98 @@ export default function ShippingAddressScreen() {
     loading,
     error,
     refresh,
+    coordinates,
   } = useCurrentLocation();
+  const { setDropoffLocation } = useOrder();
+  const { toast, showSuccess, showError, showWarning, hideToast } = useToast();
+
+  // Thêm các hàm parse giống như BillingAddressScreen
+  const parseLocationIQAddress = (item: any) => {
+    return {
+      street: item.address?.road || item.address?.name || "",
+      ward: item.address?.suburb || item.address?.neighbourhood || "",
+      district: item.address?.city_district || item.address?.county || "",
+      city:
+        item.address?.city || item.address?.town || item.address?.village || "",
+      province: item.address?.state || "",
+      postalCode: item.address?.postcode || "700000",
+      country: item.address?.country || "Việt Nam",
+      latitude: parseFloat(item.lat) || 0,
+      longitude: parseFloat(item.lon) || 0,
+      fullAddress: item.display_name || "",
+    };
+  };
+
+  // Parse địa chỉ từ reverse geocoding
+  const parseReverseGeocode = async (lat: number, lon: number) => {
+    try {
+      const addressArr = await Location.reverseGeocodeAsync({
+        latitude: lat,
+        longitude: lon,
+      });
+
+      if (addressArr && addressArr.length > 0) {
+        const addr = addressArr[0];
+        return {
+          street: addr.street || addr.name || "",
+          ward: addr.subregion || "",
+          district: addr.district || addr.city || "",
+          city: addr.city || "",
+          province: addr.region || addr.city || "",
+          postalCode: addr.postalCode || "700000",
+          country: addr.country || "Việt Nam",
+          latitude: lat,
+          longitude: lon,
+          fullAddress: `${addr.name || ""} ${addr.street || ""}, ${
+            addr.city || ""
+          }, ${addr.country || ""}`.trim(),
+        };
+      }
+    } catch (error) {
+      console.error("Reverse geocode error:", error);
+    }
+    return null;
+  };
+
+  // Lắng nghe khi màn hình được focus lại từ MapSelect
+  useFocusEffect(
+    useCallback(() => {
+      const state = navigation.getState();
+      const currentRoute = state.routes[state.index];
+      const params = currentRoute.params as { mapLocation?: any } | undefined;
+
+      if (params?.mapLocation) {
+        console.log("Received mapLocation:", params.mapLocation);
+        handleMapLocationSelect(params.mapLocation);
+
+        // Clear params sau khi xử lý
+        navigation.setParams({ mapLocation: undefined } as any);
+      }
+    }, [navigation])
+  );
+
+  const handleMapLocationSelect = async (mapLoc: any) => {
+    console.log("Processing mapLocation:", mapLoc);
+
+    if (!mapLoc?.coords) {
+      console.log("No coords found");
+      return;
+    }
+
+    const { latitude, longitude } = mapLoc.coords;
+    console.log("Coordinates:", latitude, longitude);
+
+    const parsed = await parseReverseGeocode(latitude, longitude);
+    console.log("Parsed address:", parsed);
+
+    if (parsed) {
+      setDropoffLocation(parsed);
+      console.log("Navigating to ConfirmOrder");
+      navigation.navigate("ConfirmOrder" as never);
+    } else {
+      console.log("Failed to parse address");
+    }
+  };
 
   // Fetch address suggestions from LocationIQ API
   const fetchAddressSuggestions = useCallback(async (input: string) => {
@@ -166,34 +262,30 @@ export default function ShippingAddressScreen() {
         | undefined;
       if (params?.mapLocation) {
         setMapLocation(params.mapLocation);
+        handleMapLocationSelect(params.mapLocation);
       }
     }
   }, [navigation]);
 
-  // Event handlers
-  const handleGoBack = useCallback(() => {
-    navigation.goBack();
-  }, [navigation]);
+  const handleCurrentLocation = useCallback(async () => {
+    if (!coordinates) {
+      refresh();
+      return;
+    }
 
-  const handleCurrentLocation = useCallback(() => {
-    navigation.navigate("ConfirmOrder" as never);
-  }, [navigation]);
+    const parsed = await parseReverseGeocode(
+      coordinates.latitude,
+      coordinates.longitude
+    );
+    if (parsed) {
+      setDropoffLocation(parsed);
+      navigation.navigate("ConfirmOrder" as never);
+    }
+  }, [coordinates, navigation, setDropoffLocation, refresh]);
 
   const handleAddNew = useCallback(() => {
-    console.log("Add new address...");
-  }, []);
-
-  const handleViewAll = useCallback(() => {
-    console.log("View all addresses...");
-  }, []);
-
-  const handleAddressSelect = useCallback(
-    (address: any) => {
-      console.log("Selected address:", address);
-      navigation.goBack();
-    },
-    [navigation]
-  );
+    navigation.navigate("OrderShippingAddress" as never);
+  }, [navigation]);
 
   const handleAddressMenu = useCallback((address: any) => {
     console.log("Address menu:", address);
@@ -203,9 +295,51 @@ export default function ShippingAddressScreen() {
     console.log("Help item pressed:", item);
   }, []);
 
-  const handleMapSelection = useCallback(() => {
-    navigation.navigate("MapSelect", { returnScreen: "Shipping" });
+  const handleGoBack = useCallback(() => {
+    navigation.goBack();
   }, [navigation]);
+
+  const handleAddressSelect = useCallback(
+    async (address: AddressItemType) => {
+      try {
+        const fullAddress = `${address.title}, ${address.subtitle}`;
+        const geocodeResult = await Location.geocodeAsync(fullAddress);
+
+        if (geocodeResult && geocodeResult.length > 0) {
+          const { latitude, longitude } = geocodeResult[0];
+          const parsed = await parseReverseGeocode(latitude, longitude);
+
+          if (parsed) {
+            setDropoffLocation(parsed);
+            navigation.navigate("ConfirmOrder" as never);
+          }
+        }
+      } catch (error) {
+        console.error("Error selecting address:", error);
+      }
+    },
+    [navigation, setDropoffLocation]
+  );
+
+  const handleMapSelection = useCallback(() => {
+    navigation.navigate("MapSelect", { returnScreen: "Shipping" } as never);
+  }, [navigation]);
+
+  const handleViewAll = useCallback(() => {
+    console.log("View all addresses...");
+  }, []);
+
+  const handleSuggestionSelect = useCallback(
+    (item: any) => {
+      setSearchText(item.display_name);
+      setShowDropdown(false);
+
+      const parsed = parseLocationIQAddress(item);
+      setDropoffLocation(parsed);
+      navigation.navigate("ConfirmOrder" as never);
+    },
+    [navigation, setDropoffLocation]
+  );
 
   const handleSearchTextChange = useCallback(
     (text: string) => {
@@ -223,12 +357,6 @@ export default function ShippingAddressScreen() {
     },
     [debounceTimer, fetchAddressSuggestions]
   );
-
-  const handleSuggestionSelect = useCallback((item: any) => {
-    setSearchText(item.display_name);
-    setShowDropdown(false);
-    console.log("Selected suggestion:", item);
-  }, []);
 
   const handleSearchFocus = useCallback(() => {
     setSearchFocused(true);
@@ -512,6 +640,14 @@ export default function ShippingAddressScreen() {
         </ScrollView>
       </View>
       {renderBottomButton()}
+
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+        position="top"
+      />
     </SafeAreaView>
   );
 }
