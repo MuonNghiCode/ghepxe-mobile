@@ -14,7 +14,11 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import {
+  useNavigation,
+  CommonActions,
+  StackActions,
+} from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DriverNoteOverlay from "../components/DriverNoteOverlay";
 import ServiceSelectOverlay from "../components/ServiceSelectOverlay";
@@ -27,6 +31,12 @@ import { useAuth } from "src/context/AuthContext";
 import { useToast } from "src/hooks/useToast";
 import Toast from "src/components/Toast";
 import ConfirmDialog from "src/components/ConfirmDialog";
+import { useForm } from "src/hooks/useForm";
+import { useFormValidation } from "src/hooks/useFormValidation";
+import {
+  shipRequestSchema,
+  ShipRequestFormData,
+} from "src/schemas/shipRequestSchemas";
 
 const specialRequests = [
   { label: "Giao hàng về", value: "120,000" },
@@ -43,21 +53,16 @@ export default function ConfirmOrderScreen() {
   const navigation = useNavigation();
   const [showGoodsInfo, setShowGoodsInfo] = useState(true);
   const [showNoteOverlay, setShowNoteOverlay] = useState(false);
-  const [driverNote, setDriverNote] = useState("");
   const [tempNote, setTempNote] = useState("");
   const [showServiceOverlay, setShowServiceOverlay] = useState(false);
   const [serviceType, setServiceType] = useState("single");
   const [showGoodsTypeOverlay, setShowGoodsTypeOverlay] = useState(false);
-  const [goodsType, setGoodsType] = useState("private");
   const [showPickupTimeOverlay, setShowPickupTimeOverlay] = useState(false);
   const [pickupTime, setPickupTime] = useState("standard");
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
   const [totalFee, setTotalFee] = useState(55000);
   const [showPaymentDetail, setShowPaymentDetail] = useState(false);
-  const [selectedSize, setSelectedSize] = useState(sizes[0]);
-  const [selectedCategory, setSelectedCategory] = useState(categories[0]);
-  const [otherCategory, setOtherCategory] = useState("");
-  const [weightRaw, setWeightRaw] = useState("");
+
   const {
     pickupLocation,
     dropoffLocation,
@@ -72,6 +77,45 @@ export default function ConfirmOrderScreen() {
   // State cho confirm dialog
   const [showSwapConfirm, setShowSwapConfirm] = useState(false);
   const [showCreateConfirm, setShowCreateConfirm] = useState(false);
+
+  // Form state với validation
+  const emptyLocation = {
+    fullAddress: "",
+    street: "",
+    ward: "",
+    district: "",
+    city: "",
+    province: "",
+    postalCode: "",
+    country: "",
+    latitude: 0,
+    longitude: 0,
+    receiverName: "",
+    receiverPhone: "",
+  };
+
+  const { values, setValue, setValues } = useForm<ShipRequestFormData>({
+    selectedSize: sizes[0],
+    weightRaw: "",
+    weight: 0,
+    selectedCategory: categories[0],
+    otherCategory: "",
+    goodsType: "private" as const,
+    driverNote: "",
+    pickupLocation: pickupLocation ?? emptyLocation,
+    dropoffLocation: dropoffLocation ?? emptyLocation,
+  });
+
+  const { fieldErrors, validate, clearFieldError, hasError, getError } =
+    useFormValidation(shipRequestSchema);
+
+  // Sync locations từ context vào form
+  useEffect(() => {
+    setValues({
+      pickupLocation: pickupLocation ?? emptyLocation,
+      dropoffLocation: dropoffLocation ?? emptyLocation,
+    });
+  }, [pickupLocation, dropoffLocation]);
 
   interface SpecialRequest {
     label: string;
@@ -134,20 +178,29 @@ export default function ConfirmOrderScreen() {
     showSuccess("Đã hoán đổi địa chỉ thành công");
   }, [pickupLocation, dropoffLocation, setPickupLocation, setDropoffLocation]);
 
-  // Hàm tạo đơn với confirm
+  // Hàm tạo đơn với validation
   const handleCreateOrder = () => {
     if (!user?.userId) {
       showError("Vui lòng đăng nhập để tạo đơn");
       return;
     }
 
-    if (!pickupLocation || !dropoffLocation) {
-      showWarning("Vui lòng chọn đầy đủ địa chỉ lấy hàng và giao hàng");
-      return;
-    }
+    // Cập nhật weight từ weightRaw
+    const weight = values.weightRaw ? parseFloat(values.weightRaw) : 0;
+    setValue("weight", weight);
 
-    if (!selectedSize || !weightRaw || !selectedCategory) {
-      showWarning("Vui lòng nhập đầy đủ thông tin hàng hóa");
+    // Validate form
+    const formData = {
+      ...values,
+      weight,
+      pickupLocation,
+      dropoffLocation,
+    };
+
+    const { isValid, errors, firstError } = validate(formData);
+
+    if (!isValid) {
+      showError(firstError || "Vui lòng kiểm tra lại thông tin");
       return;
     }
 
@@ -160,12 +213,15 @@ export default function ConfirmOrderScreen() {
     try {
       const items = [
         {
-          name: selectedCategory === "Khác" ? otherCategory : selectedCategory,
+          name:
+            values.selectedCategory === "Khác"
+              ? values.otherCategory
+              : values.selectedCategory,
           amount: 1,
-          weight: parseFloat(weightRaw),
-          description: driverNote || undefined,
-          size: selectedSize,
-          type: goodsType === "private" ? "Private" : "Personal",
+          weight: values.weight,
+          description: values.driverNote || undefined,
+          size: values.selectedSize,
+          type: values.goodsType === "private" ? "Private" : "Personal",
         },
       ];
 
@@ -181,7 +237,14 @@ export default function ConfirmOrderScreen() {
       if (response?.isSuccess) {
         showSuccess("Tạo đơn hàng thành công!");
         setTimeout(() => {
-          navigation.navigate("Home" as never);
+          // Pop về root của stack hiện tại
+          navigation.dispatch(StackActions.popToTop());
+
+          // Sau đó navigate đến tab Order thông qua parent navigator
+          const parent = navigation.getParent();
+          if (parent) {
+            parent.navigate("Order" as never);
+          }
         }, 1500);
       } else {
         showError(response?.error?.description || "Tạo đơn thất bại");
@@ -235,7 +298,11 @@ export default function ConfirmOrderScreen() {
       </View>
       <View style={tw`mt-2`}>
         <TouchableOpacity
-          style={tw`flex-row items-center mb-4`}
+          style={tw`flex-row items-center mb-4 ${
+            hasError("pickupLocation")
+              ? "border border-red-500 rounded-lg p-2"
+              : ""
+          }`}
           onPress={handleNavigateBillingAddress}
           activeOpacity={0.8}
         >
@@ -255,11 +322,20 @@ export default function ConfirmOrderScreen() {
                 {pickupLocation.receiverName} - {pickupLocation.receiverPhone}
               </Text>
             )}
+            {hasError("pickupLocation") && (
+              <Text style={tw`text-xs text-red-500 mt-1`}>
+                {getError("pickupLocation")}
+              </Text>
+            )}
           </View>
           <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
         </TouchableOpacity>
         <TouchableOpacity
-          style={tw`flex-row items-center`}
+          style={tw`flex-row items-center ${
+            hasError("dropoffLocation")
+              ? "border border-red-500 rounded-lg p-2"
+              : ""
+          }`}
           onPress={handleNavigateShippingAddress}
           activeOpacity={0.8}
         >
@@ -277,6 +353,11 @@ export default function ConfirmOrderScreen() {
             {dropoffLocation?.receiverName && (
               <Text style={tw`text-xs text-gray-600`}>
                 {dropoffLocation.receiverName} - {dropoffLocation.receiverPhone}
+              </Text>
+            )}
+            {hasError("dropoffLocation") && (
+              <Text style={tw`text-xs text-red-500 mt-1`}>
+                {getError("dropoffLocation")}
               </Text>
             )}
           </View>
@@ -385,14 +466,16 @@ export default function ConfirmOrderScreen() {
           >
             <Ionicons
               name={
-                goodsType === "private" ? "briefcase-outline" : "person-outline"
+                values.goodsType === "private"
+                  ? "briefcase-outline"
+                  : "person-outline"
               }
               size={20}
-              color={goodsType === "private" ? "#00A982" : "#3B82F6"}
+              color={values.goodsType === "private" ? "#00A982" : "#3B82F6"}
               style={tw`w-5.5 h-5.5 rounded-full  items-center justify-center`}
             />
             <Text style={tw`ml-2 text-sm text-black`}>
-              {goodsType === "private"
+              {values.goodsType === "private"
                 ? "Hàng hóa tư nhân"
                 : "Hàng hóa cá nhân"}
             </Text>
@@ -405,6 +488,7 @@ export default function ConfirmOrderScreen() {
             <View style={tw`flex-1`} />
             <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
           </TouchableOpacity>
+
           {/* Kích cỡ */}
           <View style={tw`mb-4`}>
             <View style={tw`flex-row items-center mb-2`}>
@@ -423,16 +507,19 @@ export default function ConfirmOrderScreen() {
                 <TouchableOpacity
                   key={size}
                   style={tw`w-12 h-12 rounded-full border items-center justify-center ${
-                    selectedSize === size
+                    values.selectedSize === size
                       ? "bg-[#E6F7F3] border-[#00A982]"
                       : "bg-white border-gray-300"
                   }`}
-                  onPress={() => setSelectedSize(size)}
+                  onPress={() => {
+                    setValue("selectedSize", size);
+                    clearFieldError("selectedSize");
+                  }}
                   activeOpacity={0.8}
                 >
                   <Text
                     style={tw`text-sm ${
-                      selectedSize === size
+                      values.selectedSize === size
                         ? "text-[#00A982] font-semibold"
                         : "text-black"
                     }`}
@@ -442,7 +529,13 @@ export default function ConfirmOrderScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+            {hasError("selectedSize") && (
+              <Text style={tw`text-xs text-red-500 mt-1`}>
+                {getError("selectedSize")}
+              </Text>
+            )}
           </View>
+
           {/* Khối lượng */}
           <View style={tw`mb-4`}>
             <Text style={tw`text-xs text-gray-500 mb-1`}>
@@ -450,30 +543,47 @@ export default function ConfirmOrderScreen() {
             </Text>
             <View style={tw`relative`}>
               <TextInput
-                style={tw`flex-1 border border-gray-300 rounded-lg px-3 py-2 text-base text-black pr-10`}
+                style={tw`flex-1 border ${
+                  hasError("weightRaw") ? "border-red-500" : "border-gray-300"
+                } rounded-lg px-3 py-2 text-base text-black pr-10`}
                 placeholder="kg"
                 placeholderTextColor="#6B6B6B"
                 value={
-                  weightRaw.length > 0
-                    ? `${parseInt(weightRaw, 10).toLocaleString()} kg`
+                  values.weightRaw.length > 0
+                    ? `${parseInt(values.weightRaw, 10).toLocaleString()} kg`
                     : ""
                 }
                 onChangeText={(text) => {
                   const onlyNumber = text.replace(/[^0-9]/g, "");
-                  setWeightRaw(onlyNumber);
+                  setValue("weightRaw", onlyNumber);
+                  if (onlyNumber) {
+                    clearFieldError("weightRaw");
+                    clearFieldError("weight");
+                  }
                 }}
                 keyboardType="numeric"
               />
-              {weightRaw.length > 0 && (
+              {values.weightRaw.length > 0 && (
                 <TouchableOpacity
                   style={tw`absolute right-3 top-1/2 -translate-y-1/2`}
-                  onPress={() => setWeightRaw("")}
+                  onPress={() => setValue("weightRaw", "")}
                 >
                   <Ionicons name="close-circle" size={22} color="#FF4D4F" />
                 </TouchableOpacity>
               )}
             </View>
+            {hasError("weightRaw") && (
+              <Text style={tw`text-xs text-red-500 mt-1`}>
+                {getError("weightRaw")}
+              </Text>
+            )}
+            {hasError("weight") && (
+              <Text style={tw`text-xs text-red-500 mt-1`}>
+                {getError("weight")}
+              </Text>
+            )}
           </View>
+
           {/* Loại hàng hóa */}
           <View style={tw`mb-4`}>
             <Text style={tw`text-xs text-gray-500 mb-2`}>
@@ -484,16 +594,22 @@ export default function ConfirmOrderScreen() {
                 <TouchableOpacity
                   key={type}
                   style={tw`px-4 py-2 rounded-full border mr-2 ${
-                    selectedCategory === type
+                    values.selectedCategory === type
                       ? "bg-[#E6F7F3] border-[#00A982]"
                       : "bg-white border-gray-300"
                   }`}
-                  onPress={() => setSelectedCategory(type)}
+                  onPress={() => {
+                    setValue("selectedCategory", type);
+                    clearFieldError("selectedCategory");
+                    if (type !== "Khác") {
+                      clearFieldError("otherCategory");
+                    }
+                  }}
                   activeOpacity={0.8}
                 >
                   <Text
                     style={tw`text-sm ${
-                      selectedCategory === type
+                      values.selectedCategory === type
                         ? "text-[#00A982] font-semibold"
                         : "text-black"
                     }`}
@@ -503,31 +619,51 @@ export default function ConfirmOrderScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            {selectedCategory === "Khác" && (
+            {hasError("selectedCategory") && (
+              <Text style={tw`text-xs text-red-500 mt-1`}>
+                {getError("selectedCategory")}
+              </Text>
+            )}
+            {values.selectedCategory === "Khác" && (
               <View style={tw`flex-row items-center mt-2 relative`}>
                 <TextInput
-                  style={tw`flex-1 border border-gray-300 rounded-lg px-3 py-2 text-base text-black pr-10`}
+                  style={tw`flex-1 border ${
+                    hasError("otherCategory")
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  } rounded-lg px-3 py-2 text-base text-black pr-10`}
                   placeholder="Nhập loại hàng hóa khác"
                   placeholderTextColor="#6B6B6B"
-                  value={otherCategory}
-                  onChangeText={setOtherCategory}
+                  value={values.otherCategory}
+                  onChangeText={(text) => {
+                    setValue("otherCategory", text);
+                    if (text.trim()) {
+                      clearFieldError("otherCategory");
+                    }
+                  }}
                 />
-                {otherCategory.length > 0 && (
+                {(values.otherCategory?.length ?? 0) > 0 && (
                   <TouchableOpacity
                     style={tw`absolute right-3`}
-                    onPress={() => setOtherCategory("")}
+                    onPress={() => setValue("otherCategory", "")}
                   >
                     <Ionicons name="close-circle" size={22} color="#FF4D4F" />
                   </TouchableOpacity>
                 )}
               </View>
             )}
+            {hasError("otherCategory") && (
+              <Text style={tw`text-xs text-red-500 mt-1`}>
+                {getError("otherCategory")}
+              </Text>
+            )}
           </View>
+
           {/* Ghi chú cho tài xế */}
           <TouchableOpacity
             style={tw`flex-row items-center border-t border-gray-200 pt-3`}
             onPress={() => {
-              setTempNote(driverNote);
+              setTempNote(values.driverNote ?? "");
               setShowNoteOverlay(true);
             }}
           >
@@ -537,14 +673,16 @@ export default function ConfirmOrderScreen() {
             </Text>
             <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
           </TouchableOpacity>
-          {driverNote ? (
+          {values.driverNote ? (
             <View
               style={tw`mt-2 px-2 py-2 bg-gray-100 rounded-lg flex-row items-center`}
             >
-              <Text style={tw`text-sm text-gray-700 flex-1`}>{driverNote}</Text>
+              <Text style={tw`text-sm text-gray-700 flex-1`}>
+                {values.driverNote}
+              </Text>
               <TouchableOpacity
                 style={tw`ml-2 px-2 py-1`}
-                onPress={() => setDriverNote("")}
+                onPress={() => setValue("driverNote", "")}
               >
                 <Ionicons name="close-circle" size={18} color="#FF4D4F" />
               </TouchableOpacity>
@@ -693,7 +831,7 @@ export default function ConfirmOrderScreen() {
         onChange={setTempNote}
         onCancel={() => setShowNoteOverlay(false)}
         onOk={() => {
-          setDriverNote(tempNote);
+          setValue("driverNote", tempNote);
           setShowNoteOverlay(false);
         }}
       />
@@ -710,9 +848,9 @@ export default function ConfirmOrderScreen() {
 
       <GoodsTypeOverlay
         visible={showGoodsTypeOverlay}
-        selected={goodsType}
+        selected={values.goodsType}
         onSelect={(value) => {
-          setGoodsType(value);
+          setValue("goodsType", value as "private" | "personal");
           setShowGoodsTypeOverlay(false);
         }}
         onCancel={() => setShowGoodsTypeOverlay(false)}

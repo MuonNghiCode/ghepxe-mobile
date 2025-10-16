@@ -82,11 +82,50 @@ export interface CreateShipRequestResponseData {
     shipRequestId: string;
 }
 
+export interface ShipRequestItemData {
+    itemId: string;
+    name: string;
+    amount: number;
+    weight: number;
+    description: string | null;
+    imageLink: string | null;
+    size: string;
+    type: string;
+}
+
+export interface ShipRequestResponseData {
+    shipRequestId: string;
+    userId: string;
+    pickupStreet: string;
+    pickupWard: string;
+    pickupDistrict: string;
+    pickupCity: string;
+    pickupProvince: string;
+    pickupPostalCode: string;
+    pickupCountry: string;
+    pickupLatitude: number;
+    pickupLongitude: number;
+    dropoffStreet: string;
+    dropoffWard: string;
+    dropoffDistrict: string;
+    dropoffCity: string;
+    dropoffProvince: string;
+    dropoffPostalCode: string;
+    dropoffCountry: string;
+    dropoffLatitude: number;
+    dropoffLongitude: number;
+    pickupWindowStart: string;
+    pickupWindowEnd: string;
+    items: ShipRequestItemData[];
+}
+
 // Type aliases sử dụng ApiResponse chung
 export type LoginResponse = ApiResponse<LoginResponseData>;
 export type RegisterResponse = ApiResponse<RegisterResponseData>;
 export type ProfileResponse = ApiResponse<ProfileResponseData>;
 export type LogoutResponse = ApiResponse<LogoutResponseData>;
 export type CreateShipRequestResponse = ApiResponse<CreateShipRequestResponseData>;
+export type GetShipRequestsResponse = ApiResponse<ShipRequestResponseData[]>;
+export type GetShipRequestResponse = ApiResponse<ShipRequestResponseData>;
 export type BaseResponse = ResponseModel<null>;
 
