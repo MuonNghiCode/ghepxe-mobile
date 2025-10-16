@@ -119,6 +119,17 @@ export interface ShipRequestResponseData {
     items: ShipRequestItemData[];
 }
 
+export interface ShipRequestDetailResponseData {
+    itemId: string;
+    name: string;
+    amount: number;
+    weight: number;
+    description: string | null;
+    imageLink: string | null;
+    size: string;
+    type: string;
+}
+
 // Type aliases sử dụng ApiResponse chung
 export type LoginResponse = ApiResponse<LoginResponseData>;
 export type RegisterResponse = ApiResponse<RegisterResponseData>;
@@ -127,5 +138,6 @@ export type LogoutResponse = ApiResponse<LogoutResponseData>;
 export type CreateShipRequestResponse = ApiResponse<CreateShipRequestResponseData>;
 export type GetShipRequestsResponse = ApiResponse<ShipRequestResponseData[]>;
 export type GetShipRequestResponse = ApiResponse<ShipRequestResponseData>;
+export type GetShipRequestDetailResponse = ApiResponse<ShipRequestDetailResponseData[]>;
 export type BaseResponse = ResponseModel<null>;
 

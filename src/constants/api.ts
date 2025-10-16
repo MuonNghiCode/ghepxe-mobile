@@ -20,11 +20,14 @@ export const API_ENDPOINTS = {
     DELETE: "/api/User/ShipRequest",
     GET_BY_USER: "/api/User/ShipRequest/user/{userId}",
     HEALTH: "/api/User/ShipRequest/health",
-    GET_ITEMS: "/api/User/ShipRequest/{shipRequestId}/Item",
+    GET_DETAILS: "/api/User/ShipRequest/{shipRequestId}/Item",
     ADD_ITEM: "/api/User/ShipRequest/{shipRequestId}/Item",
     UPDATE_ITEM: "/api/User/ShipRequest/Item/{itemId}",
     DELETE_ITEM: "/api/User/ShipRequest/Item/{itemId}",
   },
+  GEMINI: {
+    MATCHING: "api/User/Gemini/Matching"
+  }
 } as const;
 
 export const HTTP_METHODS = {

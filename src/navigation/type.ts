@@ -1,3 +1,5 @@
+import { ShipRequestResponseData } from 'src/types';
+
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
@@ -28,7 +30,12 @@ export type UserTabParamList = {
   OrderBilling: undefined;
   OrderShipping: undefined;
   Matching: undefined;
-  UserOrderDetail: undefined;
+  UserOrderDetail: {
+    id?: string;
+    shipRequestId?: string;
+    orderStatus?: string;
+    orderData?: ShipRequestResponseData;
+  };
   Order: { order: any };
   UserOrder: undefined;
   EditProfile: undefined;

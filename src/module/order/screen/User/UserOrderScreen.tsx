@@ -81,21 +81,14 @@ export default function UserOrderScreen() {
 
   const handleCardPress = useCallback(
     (shipRequest: ShipRequestResponseData) => {
+      console.log("Navigating with shipRequestId:", shipRequest.shipRequestId);
+
+      // Truyền cả data luôn, không chỉ ID
       navigation.navigate("UserOrderDetail", {
-        id: shipRequest.shipRequestId,
         shipRequestId: shipRequest.shipRequestId,
-        productImage: shipRequest.items[0]?.imageLink || "",
-        productName: shipRequest.items[0]?.name || "Không có tên",
-        quantity: shipRequest.items.length,
-        weight: shipRequest.items.reduce((sum, item) => sum + item.weight, 0),
-        price: 55000, // Giá tạm thời, sau này lấy từ backend
-        pickupAddress: `${shipRequest.pickupStreet}, ${shipRequest.pickupDistrict}, ${shipRequest.pickupProvince}`,
-        deliveryAddress: `${shipRequest.dropoffStreet}, ${shipRequest.dropoffDistrict}, ${shipRequest.dropoffProvince}`,
-        time: new Date(shipRequest.pickupWindowStart).toLocaleString("vi-VN"),
-        tag: shipRequest.items[0]?.type || "",
-        status: getOrderStatus(shipRequest),
-        orderStatus: "waiting", // Mapping sang OrderStatus
-      } as never);
+        orderStatus: "waiting",
+        orderData: shipRequest, // Thêm này
+      });
     },
     [navigation]
   );

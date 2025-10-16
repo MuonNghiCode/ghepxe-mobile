@@ -4,7 +4,9 @@ import {
     CreateShipRequestResponseData,
     GetShipRequestsResponse,
     GetShipRequestResponse,
-    ShipRequestResponseData
+    ShipRequestResponseData,
+    ShipRequestDetailResponseData,
+    GetShipRequestDetailResponse
 } from 'src/types';
 import { BaseApiService } from "src/api";
 import { API_ENDPOINTS } from 'src/constants';
@@ -31,9 +33,9 @@ class ShipRequestService extends BaseApiService {
         return this.delete(`${API_ENDPOINTS.SHIP_REQUEST.DELETE}/${shipRequestId}`);
     }
 
-    async getShipRequestItems(shipRequestId: string): Promise<any> {
-        const endpoint = API_ENDPOINTS.SHIP_REQUEST.GET_ITEMS.replace('{shipRequestId}', shipRequestId);
-        return this.get(endpoint);
+    async getShipRequestDetail(shipRequestId: string): Promise<GetShipRequestDetailResponse> {
+        const endpoint = API_ENDPOINTS.SHIP_REQUEST.GET_DETAILS.replace('{shipRequestId}', shipRequestId);
+        return this.get<ShipRequestDetailResponseData[]>(endpoint);
     }
 
     async addShipRequestItem(shipRequestId: string, itemData: any): Promise<any> {

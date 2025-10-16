@@ -7,6 +7,7 @@ import {
     GetShipRequestsResponse,
     GetShipRequestResponse,
     ShipRequestResponseData,
+    ShipRequestDetailResponseData,
 } from "src/types";
 
 export function useShipRequest() {
@@ -17,6 +18,7 @@ export function useShipRequest() {
     const [createResult, setCreateResult] = useState<CreateShipRequestResponse | null>(null);
     const [shipRequests, setShipRequests] = useState<ShipRequestResponseData[]>([]);
     const [shipRequest, setShipRequest] = useState<ShipRequestResponseData | null>(null);
+    const [shipRequestItems, setShipRequestItems] = useState<ShipRequestDetailResponseData[]>([]);
 
     // Hàm tạo ship request
     const createShipRequest = async (data: CreateShipRequestRequest) => {
@@ -61,10 +63,13 @@ export function useShipRequest() {
 
     // Hàm lấy ship request theo ID
     const getShipRequestById = async (shipRequestId: string) => {
+        console.log("Hook: Getting ship request by ID:", shipRequestId); // Debug log
         setLoading(true);
         setError(null);
         try {
             const response = await shipRequestService.getShipRequestById(shipRequestId);
+            console.log("Hook: API response:", response); // Debug log
+            
             if (response.isSuccess) {
                 setShipRequest(response.value);
             } else {
@@ -73,6 +78,7 @@ export function useShipRequest() {
             }
             return response;
         } catch (err: any) {
+            console.error("Hook: Error getting ship request:", err); // Debug log
             setError(err.message || "Có lỗi xảy ra");
             setShipRequest(null);
             return null;
@@ -127,15 +133,22 @@ export function useShipRequest() {
         return await getAllShipRequests(userId);
     };
 
-    // Hàm lấy items của ship request
+    // Hàm lấy items của ship request (chi tiết items)
     const getShipRequestItems = async (shipRequestId: string) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await shipRequestService.getShipRequestItems(shipRequestId);
+            const response = await shipRequestService.getShipRequestDetail(shipRequestId);
+            if (response.isSuccess) {
+                setShipRequestItems(response.value);
+            } else {
+                setError(response.error.description);
+                setShipRequestItems([]);
+            }
             return response;
         } catch (err: any) {
             setError(err.message || "Có lỗi xảy ra");
+            setShipRequestItems([]);
             return null;
         } finally {
             setLoading(false);
@@ -193,6 +206,7 @@ export function useShipRequest() {
         createResult,
         shipRequests,
         shipRequest,
+        shipRequestItems,
         createShipRequest,
         getAllShipRequests,
         getShipRequestById,
