@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -16,12 +16,17 @@ import {
 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ParticleBackground from "@components/ParticleBackground";
 import DriverNoteOverlay from "../components/DriverNoteOverlay";
 import ServiceSelectOverlay from "../components/ServiceSelectOverlay";
 import GoodsTypeOverlay from "../components/GoodsTypeOverlay";
 import PickupTimeOverlay from "../components/PickupTimeOverlay";
 import PaymentDetailOverlay from "../components/PaymnetDetailOverlay";
+import { useOrder } from "src/context/OrderContext";
+import { useShipRequest } from "src/hooks/useShipRequest";
+import { useAuth } from "src/context/AuthContext";
+import { useToast } from "src/hooks/useToast";
+import Toast from "src/components/Toast";
+import ConfirmDialog from "src/components/ConfirmDialog";
 
 const specialRequests = [
   { label: "Giao hàng về", value: "120,000" },
@@ -53,6 +58,20 @@ export default function ConfirmOrderScreen() {
   const [selectedCategory, setSelectedCategory] = useState(categories[0]);
   const [otherCategory, setOtherCategory] = useState("");
   const [weightRaw, setWeightRaw] = useState("");
+  const {
+    pickupLocation,
+    dropoffLocation,
+    buildShipRequest,
+    setPickupLocation,
+    setDropoffLocation,
+  } = useOrder();
+  const { createShipRequest, loading: creatingOrder } = useShipRequest();
+  const { user } = useAuth();
+  const { toast, showSuccess, showError, showWarning, hideToast } = useToast();
+
+  // State cho confirm dialog
+  const [showSwapConfirm, setShowSwapConfirm] = useState(false);
+  const [showCreateConfirm, setShowCreateConfirm] = useState(false);
 
   interface SpecialRequest {
     label: string;
@@ -86,6 +105,92 @@ export default function ConfirmOrderScreen() {
     navigation.navigate("Matching" as never);
   }, [navigation]);
 
+  // Kiểm tra khi vào màn hình, nếu chưa có địa chỉ thì yêu cầu nhập
+  useEffect(() => {
+    if (!pickupLocation) {
+      showWarning("Vui lòng chọn địa chỉ lấy hàng");
+      setTimeout(() => {
+        navigation.navigate("OrderBillingAddress" as never);
+      }, 2000);
+    }
+  }, [pickupLocation, navigation]);
+
+  // Hàm hoán đổi địa chỉ với confirm
+  const handleSwapLocations = useCallback(() => {
+    if (!pickupLocation && !dropoffLocation) {
+      showWarning("Chưa có địa chỉ nào để hoán đổi");
+      return;
+    }
+    setShowSwapConfirm(true);
+  }, [pickupLocation, dropoffLocation]);
+
+  const confirmSwap = useCallback(() => {
+    const tempPickup = pickupLocation;
+    const tempDropoff = dropoffLocation;
+
+    setPickupLocation(tempDropoff);
+    setDropoffLocation(tempPickup);
+    setShowSwapConfirm(false);
+    showSuccess("Đã hoán đổi địa chỉ thành công");
+  }, [pickupLocation, dropoffLocation, setPickupLocation, setDropoffLocation]);
+
+  // Hàm tạo đơn với confirm
+  const handleCreateOrder = () => {
+    if (!user?.userId) {
+      showError("Vui lòng đăng nhập để tạo đơn");
+      return;
+    }
+
+    if (!pickupLocation || !dropoffLocation) {
+      showWarning("Vui lòng chọn đầy đủ địa chỉ lấy hàng và giao hàng");
+      return;
+    }
+
+    if (!selectedSize || !weightRaw || !selectedCategory) {
+      showWarning("Vui lòng nhập đầy đủ thông tin hàng hóa");
+      return;
+    }
+
+    setShowCreateConfirm(true);
+  };
+
+  const confirmCreateOrder = async () => {
+    setShowCreateConfirm(false);
+
+    try {
+      const items = [
+        {
+          name: selectedCategory === "Khác" ? otherCategory : selectedCategory,
+          amount: 1,
+          weight: parseFloat(weightRaw),
+          description: driverNote || undefined,
+          size: selectedSize,
+          type: goodsType === "private" ? "Private" : "Personal",
+        },
+      ];
+
+      const now = new Date();
+      const pickupTime = {
+        start: now.toISOString(),
+        end: new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+      };
+
+      const shipRequest = buildShipRequest(user.userId, items, pickupTime);
+      const response = await createShipRequest(shipRequest);
+
+      if (response?.isSuccess) {
+        showSuccess("Tạo đơn hàng thành công!");
+        setTimeout(() => {
+          navigation.navigate("Home" as never);
+        }, 1500);
+      } else {
+        showError(response?.error?.description || "Tạo đơn thất bại");
+      }
+    } catch (error: any) {
+      showError(error.message || "Có lỗi xảy ra");
+    }
+  };
+
   // --- Render functions ---
   const renderHeader = () => (
     <View
@@ -112,15 +217,21 @@ export default function ConfirmOrderScreen() {
       <View style={tw`flex-row items-center mb-2`}>
         <Text style={tw`text-base font-semibold text-black`}>Lộ trình</Text>
         <View style={tw`flex-1`} />
-        <FontAwesome5
-          name="exchange-alt"
-          size={16}
-          color="black"
-          style={{ transform: [{ rotate: "90deg" }] }}
-        />
-        <Text style={tw`ml-1 text-base font-semibold text-black`}>
-          Hoán đổi
-        </Text>
+        <TouchableOpacity
+          style={tw`flex-row items-center`}
+          onPress={handleSwapLocations}
+          activeOpacity={0.7}
+        >
+          <FontAwesome5
+            name="exchange-alt"
+            size={16}
+            color="black"
+            style={{ transform: [{ rotate: "90deg" }] }}
+          />
+          <Text style={tw`ml-1 text-base font-semibold text-black`}>
+            Hoán đổi
+          </Text>
+        </TouchableOpacity>
       </View>
       <View style={tw`mt-2`}>
         <TouchableOpacity
@@ -134,9 +245,17 @@ export default function ConfirmOrderScreen() {
             color="white"
             style={tw`bg-black rounded-full p-1 `}
           />
-          <Text style={tw`ml-2 text-base flex-1 text-black font-medium `}>
-            XV44+7R Thành Phố XXX
-          </Text>
+          <View style={tw`ml-2 flex-1`}>
+            <Text style={tw`text-xs text-gray-500`}>Địa chỉ lấy hàng</Text>
+            <Text style={tw`text-sm text-black font-medium`} numberOfLines={2}>
+              {pickupLocation?.fullAddress || "Chưa chọn địa chỉ lấy hàng"}
+            </Text>
+            {pickupLocation?.receiverName && (
+              <Text style={tw`text-xs text-gray-600`}>
+                {pickupLocation.receiverName} - {pickupLocation.receiverPhone}
+              </Text>
+            )}
+          </View>
           <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
         </TouchableOpacity>
         <TouchableOpacity
@@ -150,9 +269,17 @@ export default function ConfirmOrderScreen() {
             color="#fff"
             style={tw`bg-[#00A982] rounded-full p-1 `}
           />
-          <Text style={tw`ml-2 text-base flex-1 text-black font-medium`}>
-            XV44+7R Thành Phố XXX
-          </Text>
+          <View style={tw`ml-2 flex-1`}>
+            <Text style={tw`text-xs text-gray-500`}>Địa chỉ giao hàng</Text>
+            <Text style={tw`text-sm text-black font-medium`} numberOfLines={2}>
+              {dropoffLocation?.fullAddress || "Chưa chọn địa chỉ giao hàng"}
+            </Text>
+            {dropoffLocation?.receiverName && (
+              <Text style={tw`text-xs text-gray-600`}>
+                {dropoffLocation.receiverName} - {dropoffLocation.receiverPhone}
+              </Text>
+            )}
+          </View>
           <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
         </TouchableOpacity>
       </View>
@@ -517,9 +644,15 @@ export default function ConfirmOrderScreen() {
         </Text>
       </View>
       <View style={tw`flex-row`}>
-        <TouchableOpacity style={tw`flex-1 bg-[#00A982] py-3 rounded-xl mr-2`}>
+        <TouchableOpacity
+          style={tw`flex-1 bg-[#00A982] py-3 rounded-xl mr-2 ${
+            creatingOrder ? "opacity-50" : ""
+          }`}
+          onPress={handleCreateOrder}
+          disabled={creatingOrder}
+        >
           <Text style={tw`text-white text-center font-bold text-base`}>
-            Tạo đơn
+            {creatingOrder ? "Đang tạo..." : "Tạo đơn"}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -544,7 +677,6 @@ export default function ConfirmOrderScreen() {
         contentContainerStyle={tw`pb-6`}
       >
         <View style={{ position: "relative", minHeight: 1200 }}>
-          {/* <ParticleBackground count={10} height={1500} /> */}
           <View style={{ position: "relative", zIndex: 1 }}>
             {renderRouteSection()}
             {renderServiceSection()}
@@ -554,6 +686,7 @@ export default function ConfirmOrderScreen() {
         </View>
       </ScrollView>
 
+      {/* Overlays */}
       <DriverNoteOverlay
         visible={showNoteOverlay}
         value={tempNote}
@@ -602,6 +735,39 @@ export default function ConfirmOrderScreen() {
         selectedRequests={selectedRequests}
         totalFee={totalFee}
         onClose={() => setShowPaymentDetail(false)}
+      />
+
+      {/* Confirm Dialogs */}
+      <ConfirmDialog
+        visible={showSwapConfirm}
+        title="Hoán đổi địa chỉ"
+        message="Bạn có chắc muốn hoán đổi địa chỉ lấy hàng và giao hàng không?"
+        type="warning"
+        confirmText="Hoán đổi"
+        cancelText="Hủy"
+        onConfirm={confirmSwap}
+        onCancel={() => setShowSwapConfirm(false)}
+      />
+
+      <ConfirmDialog
+        visible={showCreateConfirm}
+        title="Xác nhận tạo đơn"
+        message="Bạn có chắc muốn tạo đơn hàng này không?"
+        type="info"
+        confirmText="Tạo đơn"
+        cancelText="Hủy"
+        onConfirm={confirmCreateOrder}
+        onCancel={() => setShowCreateConfirm(false)}
+      />
+
+      {/* Toast */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+        position="top"
+        duration={3000}
       />
 
       {renderFooter()}

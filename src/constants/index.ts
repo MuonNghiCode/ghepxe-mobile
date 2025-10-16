@@ -39,7 +39,7 @@ export const ROUTES = {
   },
   MAIN: {
     HOME: "HomeScreen",
-    PROFILE: "ProfileScreen",
+    USER: "UserScreen",
     SETTINGS: "SettingsScreen",
   },
 } as const;

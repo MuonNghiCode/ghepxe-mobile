@@ -17,6 +17,10 @@ import * as Location from "expo-location";
 import * as Contacts from "expo-contacts";
 import ContactPickerModal from "../components/ContactPickerModel";
 import AddressSuggestModal from "../components/AddressSuggestModal";
+import { useOrder } from "src/context/OrderContext";
+import { useToast } from "src/hooks/useToast";
+import Toast from "src/components/Toast";
+import ConfirmDialog from "src/components/ConfirmDialog";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MAP_HEIGHT = SCREEN_HEIGHT * 0.45;
@@ -26,6 +30,10 @@ interface AddressObject {
   street?: string | null;
   city?: string | null;
   country?: string | null;
+  district?: string | null;
+  subLocality?: string | null;
+  region?: string | null;
+  postalCode?: string | null;
   [key: string]: any;
 }
 
@@ -35,6 +43,21 @@ function formatAddress(addressArr: AddressObject[]): string {
   return `${name ?? ""} ${street ?? ""}, ${city ?? ""}, ${
     country ?? ""
   }`.trim();
+}
+
+// Thêm hàm parseAddressComponents
+function parseAddressComponents(addressArr: AddressObject[]) {
+  if (!addressArr || addressArr.length === 0) return null;
+  const addr = addressArr[0];
+  return {
+    street: addr.street || addr.name || "",
+    ward: addr.subLocality || "",
+    district: addr.district || addr.city || "",
+    city: addr.city || "",
+    province: addr.region || addr.city || "",
+    postalCode: addr.postalCode || "700000",
+    country: addr.country || "Việt Nam",
+  };
 }
 
 export default function OrderBillingAddressScreen() {
@@ -48,7 +71,14 @@ export default function OrderBillingAddressScreen() {
   const [addressNote, setAddressNote] = useState("");
   const navigation = useNavigation();
 
-  // Hook lấy vị trí hiện tại
+  const [region, setRegion] = useState<any>(null);
+  const [selected, setSelected] = useState<any>(null);
+  const [address, setAddress] = useState<string>("");
+  const [isMapFull, setIsMapFull] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false); // Thêm flag để track init
+
+  const { pickupLocation, setPickupLocation } = useOrder();
+
   const {
     location,
     address: currentAddress,
@@ -58,15 +88,36 @@ export default function OrderBillingAddressScreen() {
     coordinates,
   } = useCurrentLocation();
 
-  // Map state
-  const [region, setRegion] = useState<any>(null);
-  const [selected, setSelected] = useState<any>(null);
-  const [address, setAddress] = useState<string>("");
-  const [isMapFull, setIsMapFull] = useState(false);
+  const { toast, showSuccess, showError, showWarning, hideToast } = useToast();
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  // Khi có vị trí hiện tại, set region và marker
+  // Load dữ liệu từ context khi vào màn hình - CHỈ CHẠY 1 LẦN
   useEffect(() => {
-    if (coordinates) {
+    if (isInitialized) return; // Đã init rồi thì không chạy nữa
+
+    if (pickupLocation) {
+      // Restore địa chỉ từ context
+      setAddress(pickupLocation.fullAddress);
+      setAddressNote(pickupLocation.note || "");
+      setReceiverName(pickupLocation.receiverName || "");
+      setReceiverPhone(pickupLocation.receiverPhone || "");
+      setCod(pickupLocation.cod || "");
+      setGoodsValue(pickupLocation.goodsValue || "");
+
+      // Restore vị trí trên map
+      setRegion({
+        latitude: pickupLocation.latitude,
+        longitude: pickupLocation.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+      setSelected({
+        latitude: pickupLocation.latitude,
+        longitude: pickupLocation.longitude,
+      });
+      setIsInitialized(true);
+    } else if (coordinates) {
+      // Nếu chưa có pickupLocation, dùng vị trí hiện tại
       setRegion({
         latitude: coordinates.latitude,
         longitude: coordinates.longitude,
@@ -78,13 +129,23 @@ export default function OrderBillingAddressScreen() {
         longitude: coordinates.longitude,
       });
       setAddress(currentAddress || "");
+      setIsInitialized(true);
     }
-  }, [coordinates, currentAddress]);
+  }, [pickupLocation, coordinates, currentAddress, isInitialized]);
 
-  // Khi chọn vị trí mới trên map
+  // Cập nhật handleMapPress - KHÔNG ghi đè thông tin người nhận
   const handleMapPress = async (e: MapPressEvent) => {
     const { latitude, longitude } = e.nativeEvent.coordinate;
     setSelected({ latitude, longitude });
+
+    // Cập nhật region để map di chuyển đến vị trí mới
+    setRegion({
+      latitude,
+      longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
+
     try {
       const addressArr = await Location.reverseGeocodeAsync({
         latitude,
@@ -92,38 +153,179 @@ export default function OrderBillingAddressScreen() {
       });
       const formatted = formatAddress(addressArr);
       setAddress(formatted);
+
+      // Lưu vào context - GIỮ LẠI thông tin receiver cũ
+      const parsed = parseAddressComponents(addressArr);
+      if (parsed) {
+        setPickupLocation({
+          ...parsed,
+          latitude,
+          longitude,
+          fullAddress: formatted,
+          // Giữ lại các thông tin đã nhập
+          note: addressNote,
+          receiverName,
+          receiverPhone,
+          cod,
+          goodsValue,
+        });
+      }
     } catch (error) {
       setAddress("Không thể xác định địa chỉ");
     }
   };
 
-  // Nút định vị lại vị trí hiện tại
+  // Cập nhật handleSelectAddressFromModal - GIỮ LẠI thông tin
+  const handleSelectAddressFromModal = async (addressString: string) => {
+    setAddress(addressString);
+    setShowAddressModal(false);
+
+    try {
+      const geocodeResult = await Location.geocodeAsync(addressString);
+      if (geocodeResult && geocodeResult.length > 0) {
+        const { latitude, longitude } = geocodeResult[0];
+
+        // Cập nhật region và selected
+        setRegion({
+          latitude,
+          longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
+        setSelected({ latitude, longitude });
+
+        // Reverse geocode để lấy thông tin đầy đủ
+        const addressArr = await Location.reverseGeocodeAsync({
+          latitude,
+          longitude,
+        });
+        const parsed = parseAddressComponents(addressArr);
+        if (parsed) {
+          setPickupLocation({
+            ...parsed,
+            latitude,
+            longitude,
+            fullAddress: addressString,
+            // Giữ lại các thông tin đã nhập
+            note: addressNote,
+            receiverName,
+            receiverPhone,
+            cod,
+            goodsValue,
+          });
+        }
+        showSuccess("Đã cập nhật địa chỉ");
+      }
+    } catch (error) {
+      showError("Không thể xác định vị trí của địa chỉ này");
+    }
+  };
+
+  // Cập nhật handleMyLocation - GIỮ LẠI thông tin
   const handleMyLocation = () => {
     refresh();
+    if (coordinates && currentAddress) {
+      // Cập nhật region và selected
+      setRegion({
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+      setSelected({
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+      });
+      setAddress(currentAddress);
+
+      // Parse current address và lưu vào context
+      Location.reverseGeocodeAsync(coordinates).then((addressArr) => {
+        const parsed = parseAddressComponents(addressArr);
+        if (parsed) {
+          setPickupLocation({
+            ...parsed,
+            latitude: coordinates.latitude,
+            longitude: coordinates.longitude,
+            fullAddress: currentAddress,
+            // Giữ lại các thông tin đã nhập
+            note: addressNote,
+            receiverName,
+            receiverPhone,
+            cod,
+            goodsValue,
+          });
+        }
+      });
+    }
+  };
+
+  // Thêm hàm xác nhận - cập nhật để navigate
+  const handleConfirm = () => {
+    if (!selected || !address) {
+      showWarning("Vui lòng chọn địa chỉ lấy hàng");
+      return;
+    }
+    if (!receiverName || !receiverPhone) {
+      showWarning("Vui lòng nhập đầy đủ thông tin người gửi");
+      return;
+    }
+
+    setShowConfirmDialog(true);
+  };
+
+  const confirmAddress = () => {
+    Location.reverseGeocodeAsync(selected).then((addressArr) => {
+      const parsed = parseAddressComponents(addressArr);
+      if (parsed) {
+        setPickupLocation({
+          ...parsed,
+          latitude: selected.latitude,
+          longitude: selected.longitude,
+          fullAddress: address,
+          note: addressNote,
+          receiverName,
+          receiverPhone,
+          cod,
+          goodsValue,
+        });
+
+        setShowConfirmDialog(false);
+        showSuccess("Đã lưu địa chỉ lấy hàng");
+        setTimeout(() => {
+          navigation.navigate("ConfirmOrder" as never);
+        }, 1000);
+      }
+    });
   };
 
   const handleOpenContacts = async () => {
-    const { status } = await Contacts.requestPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Không có quyền truy cập danh bạ");
-      return;
-    }
-    const { data } = await Contacts.getContactsAsync({
-      fields: [Contacts.Fields.PhoneNumbers],
-    });
-    if (data.length > 0) {
-      setContacts(
-        data.filter((c) => c.phoneNumbers && c.phoneNumbers.length > 0)
-      );
-      setShowContactModal(true);
-    } else {
-      Alert.alert("Không tìm thấy liên hệ nào trong danh bạ");
+    try {
+      const { status } = await Contacts.requestPermissionsAsync();
+      if (status !== "granted") {
+        showWarning("Cần cấp quyền truy cập danh bạ");
+        return;
+      }
+
+      const { data } = await Contacts.getContactsAsync({
+        fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Name],
+      });
+
+      if (data.length > 0) {
+        setContacts(data);
+        setShowContactModal(true);
+      }
+    } catch (error) {
+      showError("Không thể truy cập danh bạ");
     }
   };
 
   const handleSelectContact = (contact: Contacts.Contact) => {
-    setReceiverName(contact.name ?? "");
-    setReceiverPhone(contact.phoneNumbers?.[0]?.number ?? "");
+    if (contact.name) {
+      setReceiverName(contact.name);
+    }
+    if (contact.phoneNumbers && contact.phoneNumbers.length > 0) {
+      setReceiverPhone(contact.phoneNumbers[0].number || "");
+    }
     setShowContactModal(false);
   };
 
@@ -169,11 +371,7 @@ export default function OrderBillingAddressScreen() {
         <MapView
           style={tw`flex-1`}
           initialRegion={region}
-          region={
-            selected
-              ? { ...selected, latitudeDelta: 0.01, longitudeDelta: 0.01 }
-              : region
-          }
+          region={region} // Xóa phần điều kiện, luôn dùng region
           onPress={handleMapPress}
           showsUserLocation={true}
           showsMyLocationButton={false}
@@ -460,6 +658,7 @@ export default function OrderBillingAddressScreen() {
     <View style={tw`absolute bottom-0 left-0 right-0 bg-white px-4 pb-6 pt-3`}>
       <TouchableOpacity
         style={tw`bg-[#00A982] rounded-xl py-3 items-center w-full`}
+        onPress={handleConfirm}
       >
         <Text style={tw`text-white text-base font-bold`}>Xác nhận</Text>
       </TouchableOpacity>
@@ -500,10 +699,26 @@ export default function OrderBillingAddressScreen() {
       <AddressSuggestModal
         visible={showAddressModal}
         onClose={() => setShowAddressModal(false)}
-        onSelect={(address: string) => {
-          setAddress(address);
-          setShowAddressModal(false);
-        }}
+        onSelect={handleSelectAddressFromModal}
+      />
+
+      <ConfirmDialog
+        visible={showConfirmDialog}
+        title="Xác nhận địa chỉ"
+        message="Xác nhận địa chỉ lấy hàng và thông tin người gửi?"
+        type="info"
+        confirmText="Xác nhận"
+        cancelText="Hủy"
+        onConfirm={confirmAddress}
+        onCancel={() => setShowConfirmDialog(false)}
+      />
+
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+        position="top"
       />
     </View>
   );

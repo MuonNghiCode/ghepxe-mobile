@@ -1,9 +1,8 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { navigationRef } from "src/navigation/RootNavigation";
-import { ErrorResponseModel, ResponseModel } from "src/types";
+import { ErrorResponseModel, ApiResponse } from "src/types";
 import { API_BASE_URL, API_HEADERS, STORAGE_KEYS } from "src/constants";
-
 
 class BaseApiService {
   protected api: AxiosInstance;
@@ -21,7 +20,6 @@ class BaseApiService {
   }
 
   private setupInterceptors(): void {
-    // === Request interceptor ===
     this.api.interceptors.request.use(
       async (config) => {
         const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
@@ -33,24 +31,18 @@ class BaseApiService {
       (error) => Promise.reject(error)
     );
 
-    // === Response interceptor ===
     this.api.interceptors.response.use(
       (response: AxiosResponse) => response,
       async (error) => {
-        // Nếu token hết hạn → xóa token và điều hướng về Login
         if (error.response?.status === 401) {
           await AsyncStorage.multiRemove([
             STORAGE_KEYS.TOKEN,
             STORAGE_KEYS.USER,
           ]);
-
-          // Dùng React Navigation để điều hướng
           if (navigationRef.isReady()) {
             navigationRef.navigate("Login" as never);
           }
         }
-
-        // Chuẩn hóa lỗi trả về
         const errorResponse: ErrorResponseModel = {
           success: false,
           message:
@@ -59,36 +51,28 @@ class BaseApiService {
             "Có lỗi xảy ra. Vui lòng thử lại.",
           error: error.response?.data?.error || error.message,
         };
-
         return Promise.reject(errorResponse);
       }
     );
   }
-
-  // === Các hàm CRUD chung ===
-  protected async get<T>(url: string, params?: any): Promise<ResponseModel<T>> {
-    const response = await this.api.get<ResponseModel<T>>(url, { params });
+  
+  protected async get<T>(url: string, params?: any): Promise<ApiResponse<T>> {
+    const response = await this.api.get<ApiResponse<T>>(url, { params });
     return response.data;
   }
 
-  protected async post<T>(
-    url: string,
-    data?: any
-  ): Promise<ResponseModel<T>> {
-    const response = await this.api.post<ResponseModel<T>>(url, data);
+  protected async post<T>(url: string, data?: any): Promise<ApiResponse<T>> {
+    const response = await this.api.post<ApiResponse<T>>(url, data);
     return response.data;
   }
 
-  protected async put<T>(
-    url: string,
-    data?: any
-  ): Promise<ResponseModel<T>> {
-    const response = await this.api.put<ResponseModel<T>>(url, data);
+  protected async put<T>(url: string, data?: any): Promise<ApiResponse<T>> {
+    const response = await this.api.put<ApiResponse<T>>(url, data);
     return response.data;
   }
 
-  protected async delete<T>(url: string): Promise<ResponseModel<T>> {
-    const response = await this.api.delete<ResponseModel<T>>(url);
+  protected async delete<T>(url: string): Promise<ApiResponse<T>> {
+    const response = await this.api.delete<ApiResponse<T>>(url);
     return response.data;
   }
 }

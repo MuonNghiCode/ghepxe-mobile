@@ -16,6 +16,24 @@ export interface SuccessResponseModel<T> {
     data: T;
 }
 
+export interface ApiErrorResponse {
+    type: string;
+    status: number;
+    detail: string;
+    errors: any;
+}
+
+// Interface chung cho tất cả API response từ backend
+export interface ApiResponse<T> {
+    value: T;
+    isSuccess: boolean;
+    isFailure: boolean;
+    error: {
+        code: string;
+        description: string;
+    };
+}
+
 export interface ListResponseData<T> {
     items: T[];
     pagination?: {
@@ -39,53 +57,11 @@ export interface LoginResponseData {
     }
 }
 
-export interface ActualLoginResponse {
-    value: LoginResponseData;
-    isSuccess: boolean;
-    isFailure: boolean;
-    error: {
-        code: string;
-        description: string;
-    };
-}
-
 export interface RegisterResponseData {
-    isSuccess: boolean;
-    isFailure: boolean;
-    error: {
-        code: string;
-        description: string;
-    };
+    message?: string;
 }
 
-export interface ActualRegisterResponse {
-    isSuccess: boolean;
-    isFailure: boolean;
-    error: {
-        code: string;
-        description: string;
-    };
-}
-
-export interface LogoutResponseData {
-    message: string;
-}
-
-export type LogoutResponse = LogoutResponseData;
-export type RegisterResponse = ActualRegisterResponse;  
-export type LoginResponse = ActualLoginResponse;
-export type BaseResponse = ResponseModel<null>;
-
-// Thêm type cho error response mới
-export interface ApiErrorResponse {
-    type: string;
-    status: number;
-    detail: string;
-    errors: any;
-}
-
-// Thêm type cho profile response
-export interface ProfileData {
+export interface ProfileResponseData {
     userId: string;
     username: string;
     email: string;
@@ -98,15 +74,19 @@ export interface ProfileData {
     shipRequestsCount: number;
 }
 
-export interface ActualProfileResponse {
-    value: ProfileData;
-    isSuccess: boolean;
-    isFailure: boolean;
-    error: {
-        code: string;
-        description: string;
-    };
+export interface LogoutResponseData {
+    message: string;
 }
 
-export type ProfileResponse = ActualProfileResponse;
+export interface CreateShipRequestResponseData {
+    shipRequestId: string;
+}
+
+// Type aliases sử dụng ApiResponse chung
+export type LoginResponse = ApiResponse<LoginResponseData>;
+export type RegisterResponse = ApiResponse<RegisterResponseData>;
+export type ProfileResponse = ApiResponse<ProfileResponseData>;
+export type LogoutResponse = ApiResponse<LogoutResponseData>;
+export type CreateShipRequestResponse = ApiResponse<CreateShipRequestResponseData>;
+export type BaseResponse = ResponseModel<null>;
 
