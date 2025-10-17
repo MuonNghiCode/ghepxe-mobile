@@ -417,7 +417,7 @@ export default function OrderBillingAddressScreen() {
     <View style={tw`px-4 pt-4 w-full`}>
       <View style={tw`mb-4 w-full`}>
         <Text style={tw`text-base font-semibold text-black mb-3`}>
-          Giao hàng đến
+          Lấy hàng tại
         </Text>
         {/* Địa chỉ giao hàng */}
         <View
@@ -492,23 +492,21 @@ export default function OrderBillingAddressScreen() {
     <View style={tw`border-t border-gray-200 py-4 w-full px-4`}>
       <View style={tw`flex-row justify-between items-center mb-2`}>
         <Text style={tw`text-base font-semibold text-black`}>
-          Thông tin người nhận
+          Thông tin người gửi
         </Text>
         <TouchableOpacity>
-          <Text style={tw`text-[#00A982] font-semibold`}>
-            Tôi là người nhận
-          </Text>
+          <Text style={tw`text-[#00A982] font-semibold`}>Tôi là người gửi</Text>
         </TouchableOpacity>
       </View>
-      {/* Tên người nhận */}
+      {/* Tên người gửi */}
       <View
         style={tw`bg-white rounded-xl border border-gray-300 px-3 py-2 mb-2 flex-row items-center`}
       >
         <View style={tw`flex-1`}>
-          <Text style={tw`text-xs text-gray-500`}>Tên người nhận</Text>
+          <Text style={tw`text-xs text-gray-500`}>Tên người gửi</Text>
           <TextInput
             style={tw`text-base text-black py-1`}
-            placeholder="Vui lòng nhập tên người nhận"
+            placeholder="Vui lòng nhập tên người gửi"
             placeholderTextColor="#6B6B6B"
             value={receiverName}
             onChangeText={setReceiverName}
@@ -559,101 +557,6 @@ export default function OrderBillingAddressScreen() {
     </View>
   );
 
-  const renderCodSection = () => (
-    <View style={tw`border-t border-gray-200 pt-4 w-full px-4`}>
-      <View style={tw`flex-row items-center mb-2`}>
-        <Text style={tw`text-base font-semibold text-black`}>COD</Text>
-        <Ionicons
-          name="information-circle-outline"
-          size={14}
-          color="#6B6B6B"
-          style={tw`ml-1`}
-        />
-      </View>
-      <View
-        style={tw`bg-gray-200 rounded-xl px-3 py-2 flex-row items-center mb-2`}
-      >
-        <TextInput
-          style={tw`flex-1 text-base text-black`}
-          placeholder="Nhập số tiền"
-          placeholderTextColor="#6B6B6B"
-          value={cod}
-          onChangeText={setCod}
-          keyboardType="numeric"
-          editable={true}
-        />
-        {cod.length > 0 && (
-          <TouchableOpacity onPress={() => setCod("")}>
-            <Ionicons
-              name="close-circle"
-              size={20}
-              color="#FF4D4F"
-              style={tw`ml-2`}
-            />
-          </TouchableOpacity>
-        )}
-        <Ionicons
-          name="lock-closed-outline"
-          size={20}
-          color="#6B6B6B"
-          style={tw`ml-2`}
-        />
-      </View>
-      <View style={tw`bg-[#BDE7FF] rounded-lg px-3 py-2 flex-row items-center`}>
-        <Ionicons
-          name="information"
-          size={18}
-          color="#5ABCE5"
-          style={tw`mr-2 p-1 bg-[#005AAE]/80 rounded-full items-center justify-center`}
-        />
-        <Text style={tw`text-xs text-black flex-1 font-semibold`}>
-          Định danh tài khoản để mở mức ứng COD lên đến 1.000.000đ
-        </Text>
-      </View>
-    </View>
-  );
-
-  const renderGoodsValueSection = () => (
-    <View style={tw`border-t border-gray-200 pt-4 w-full px-4`}>
-      <View style={tw`flex-row items-center mb-2`}>
-        <Text style={tw`text-base font-semibold text-black`}>
-          Giá trị hàng hóa
-        </Text>
-        <Ionicons
-          name="information-circle-outline"
-          size={16}
-          color="#6B6B6B"
-          style={tw`ml-1`}
-        />
-      </View>
-      <View
-        style={tw`bg-white rounded-xl border border-gray-300 px-3 py-2 flex-row items-center mb-1`}
-      >
-        <TextInput
-          style={tw`flex-1 text-base text-black`}
-          placeholder="Giá trị hàng hóa"
-          placeholderTextColor="#6B6B6B"
-          value={goodsValue}
-          onChangeText={setGoodsValue}
-          keyboardType="numeric"
-        />
-        {goodsValue.length > 0 && (
-          <TouchableOpacity onPress={() => setGoodsValue("")}>
-            <Ionicons
-              name="close-circle"
-              size={20}
-              color="#FF4D4F"
-              style={tw`ml-2`}
-            />
-          </TouchableOpacity>
-        )}
-      </View>
-      <Text style={tw`text-xs text-gray-500 mt-1`}>
-        Nhập giá trị hàng hóa để được đền bù lên đến 5.000.000đ
-      </Text>
-    </View>
-  );
-
   const renderFooter = () => (
     <View style={tw`absolute bottom-0 left-0 right-0 bg-white px-4 pb-6 pt-3`}>
       <TouchableOpacity
@@ -683,8 +586,6 @@ export default function OrderBillingAddressScreen() {
           >
             {renderAddressSection()}
             {renderReceiverSection()}
-            {renderCodSection()}
-            {renderGoodsValueSection()}
           </ScrollView>
           {renderFooter()}
         </View>

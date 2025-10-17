@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  Image,
 } from "react-native";
 import tw from "twrnc";
 import {
@@ -37,6 +38,9 @@ import {
   shipRequestSchema,
   ShipRequestFormData,
 } from "src/schemas/shipRequestSchemas";
+import * as ImagePicker from "expo-image-picker";
+import CategorySelectOverlay from "../components/CategorySelectOverlay";
+import { Product } from "src/types/product.interface";
 
 const specialRequests = [
   { label: "Giao hàng về", value: "120,000" },
@@ -47,11 +51,40 @@ const specialRequests = [
 ];
 
 const sizes = ["S", "M", "L", "XL", "2XL", "3XL"];
-const categories = ["Thời trang", "Mỹ phẩm", "Khác"];
+const categories = [
+  "Thời trang",
+  "Điện tử",
+  "Khác", // Chỉ hiển thị 3 loại, "Khác" sẽ mở overlay
+];
+
+const allCategories = [
+  "Thời trang",
+  "Mỹ phẩm",
+  "Thực phẩm",
+  "Điện tử",
+  "Sách vở",
+  "Đồ gia dụng",
+  "Đồ chơi",
+  "Thể thao",
+  "Nội thất",
+  "Trang sức",
+]; // Danh sách đầy đủ cho overlay
 
 export default function ConfirmOrderScreen() {
   const navigation = useNavigation();
+  const [orderCategory, setOrderCategory] = useState(categories[0]);
+  const [showCategoryOverlay, setShowCategoryOverlay] = useState(false);
+  const [showProductsList, setShowProductsList] = useState(true);
   const [showGoodsInfo, setShowGoodsInfo] = useState(true);
+  const [products, setProducts] = useState<Product[]>([
+    {
+      id: Date.now().toString(),
+      name: "",
+      size: sizes[0],
+      weight: "",
+      imageUri: undefined,
+    },
+  ]);
   const [showNoteOverlay, setShowNoteOverlay] = useState(false);
   const [tempNote, setTempNote] = useState("");
   const [showServiceOverlay, setShowServiceOverlay] = useState(false);
@@ -207,23 +240,102 @@ export default function ConfirmOrderScreen() {
     setShowCreateConfirm(true);
   };
 
+  // Hàm thêm sản phẩm mới
+  const handleAddProduct = () => {
+    const newProduct: Product = {
+      id: Date.now().toString(),
+      name: "",
+      size: sizes[0],
+      weight: "",
+      imageUri: undefined,
+    };
+    setProducts([...products, newProduct]);
+  };
+
+  // Hàm xóa sản phẩm
+  const handleRemoveProduct = (id: string) => {
+    if (products.length > 1) {
+      setProducts(products.filter((p) => p.id !== id));
+    } else {
+      showWarning("Phải có ít nhất 1 sản phẩm");
+    }
+  };
+
+  // Hàm cập nhật thông tin sản phẩm
+  const handleUpdateProduct = (
+    id: string,
+    field: keyof Product,
+    value: string
+  ) => {
+    setProducts(
+      products.map((p) => (p.id === id ? { ...p, [field]: value } : p))
+    );
+  };
+
+  // Hàm chọn ảnh cho sản phẩm
+  const handlePickImage = async (productId: string) => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        handleUpdateProduct(productId, "imageUri", result.assets[0].uri);
+      }
+    } catch (error) {
+      showError("Không thể chọn ảnh");
+    }
+  };
+
+  // Hàm chụp ảnh cho sản phẩm
+  const handleTakePhoto = async (productId: string) => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        showError("Cần cấp quyền truy cập camera");
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        handleUpdateProduct(productId, "imageUri", result.assets[0].uri);
+      }
+    } catch (error) {
+      showError("Không thể chụp ảnh");
+    }
+  };
+
+  // Cập nhật hàm tạo đơn
   const confirmCreateOrder = async () => {
     setShowCreateConfirm(false);
 
     try {
-      const items = [
-        {
-          name:
-            values.selectedCategory === "Khác"
-              ? values.otherCategory
-              : values.selectedCategory,
-          amount: 1,
-          weight: values.weight,
-          description: values.driverNote || undefined,
-          size: values.selectedSize,
-          type: values.goodsType === "private" ? "Private" : "Personal",
-        },
-      ];
+      // Validate products
+      const invalidProducts = products.filter(
+        (p) => !p.name.trim() || !p.weight || parseFloat(p.weight) <= 0
+      );
+
+      if (invalidProducts.length > 0) {
+        showError("Vui lòng nhập đầy đủ thông tin cho tất cả sản phẩm");
+        return;
+      }
+
+      const items = products.map((product) => ({
+        name: product.name,
+        amount: 1,
+        weight: parseFloat(product.weight),
+        description: values.driverNote || undefined,
+        size: product.size,
+        type: values.goodsType === "private" ? "Private" : "Personal",
+      }));
 
       const now = new Date();
       const pickupTime = {
@@ -237,10 +349,7 @@ export default function ConfirmOrderScreen() {
       if (response?.isSuccess) {
         showSuccess("Tạo đơn hàng thành công!");
         setTimeout(() => {
-          // Pop về root của stack hiện tại
           navigation.dispatch(StackActions.popToTop());
-
-          // Sau đó navigate đến tab Order thông qua parent navigator
           const parent = navigation.getParent();
           if (parent) {
             parent.navigate("Order" as never);
@@ -430,6 +539,7 @@ export default function ConfirmOrderScreen() {
     </View>
   );
 
+  // Render phần thông tin hàng hóa
   const renderGoodsInfoSection = () => (
     <View style={tw`bg-white rounded-2xl mx-4 mt-4 p-4 shadow-lg`}>
       <View style={tw`flex-row items-center mb-3`}>
@@ -456,11 +566,12 @@ export default function ConfirmOrderScreen() {
           />
         </TouchableOpacity>
       </View>
+
       {showGoodsInfo && (
         <>
-          {/* Hàng hóa tư nhân */}
+          {/* Hàng hóa tư nhân/cá nhân */}
           <TouchableOpacity
-            style={tw`flex-row items-center mb-4`}
+            style={tw`flex-row items-center mb-4 pb-4 border-b border-gray-200`}
             onPress={() => setShowGoodsTypeOverlay(true)}
             activeOpacity={0.8}
           >
@@ -472,7 +583,6 @@ export default function ConfirmOrderScreen() {
               }
               size={20}
               color={values.goodsType === "private" ? "#00A982" : "#3B82F6"}
-              style={tw`w-5.5 h-5.5 rounded-full  items-center justify-center`}
             />
             <Text style={tw`ml-2 text-sm text-black`}>
               {values.goodsType === "private"
@@ -489,179 +599,316 @@ export default function ConfirmOrderScreen() {
             <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
           </TouchableOpacity>
 
-          {/* Kích cỡ */}
-          <View style={tw`mb-4`}>
-            <View style={tw`flex-row items-center mb-2`}>
-              <Text style={tw`text-xs text-gray-500 flex-1`}>
-                Kích cỡ <Text style={tw`text-[#00A982]`}>*</Text>
-              </Text>
-              <TouchableOpacity>
-                <Text style={tw`text-xs text-[#00A982]`}>Xem hình ảnh</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={tw`text-xs text-gray-400 mb-2`}>
-              Tối đa 25x32x12 cm
-            </Text>
-            <View style={tw`flex-row justify-between`}>
-              {sizes.map((size) => (
-                <TouchableOpacity
-                  key={size}
-                  style={tw`w-12 h-12 rounded-full border items-center justify-center ${
-                    values.selectedSize === size
-                      ? "bg-[#E6F7F3] border-[#00A982]"
-                      : "bg-white border-gray-300"
-                  }`}
-                  onPress={() => {
-                    setValue("selectedSize", size);
-                    clearFieldError("selectedSize");
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={tw`text-sm ${
-                      values.selectedSize === size
-                        ? "text-[#00A982] font-semibold"
-                        : "text-black"
-                    }`}
-                  >
-                    {size}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            {hasError("selectedSize") && (
-              <Text style={tw`text-xs text-red-500 mt-1`}>
-                {getError("selectedSize")}
-              </Text>
-            )}
-          </View>
-
-          {/* Khối lượng */}
-          <View style={tw`mb-4`}>
-            <Text style={tw`text-xs text-gray-500 mb-1`}>
-              Khối lượng (kg) <Text style={tw`text-[#00A982]`}>*</Text>
-            </Text>
-            <View style={tw`relative`}>
-              <TextInput
-                style={tw`flex-1 border ${
-                  hasError("weightRaw") ? "border-red-500" : "border-gray-300"
-                } rounded-lg px-3 py-2 text-base text-black pr-10`}
-                placeholder="kg"
-                placeholderTextColor="#6B6B6B"
-                value={
-                  values.weightRaw.length > 0
-                    ? `${parseInt(values.weightRaw, 10).toLocaleString()} kg`
-                    : ""
-                }
-                onChangeText={(text) => {
-                  const onlyNumber = text.replace(/[^0-9]/g, "");
-                  setValue("weightRaw", onlyNumber);
-                  if (onlyNumber) {
-                    clearFieldError("weightRaw");
-                    clearFieldError("weight");
-                  }
-                }}
-                keyboardType="numeric"
-              />
-              {values.weightRaw.length > 0 && (
-                <TouchableOpacity
-                  style={tw`absolute right-3 top-1/2 -translate-y-1/2`}
-                  onPress={() => setValue("weightRaw", "")}
-                >
-                  <Ionicons name="close-circle" size={22} color="#FF4D4F" />
-                </TouchableOpacity>
-              )}
-            </View>
-            {hasError("weightRaw") && (
-              <Text style={tw`text-xs text-red-500 mt-1`}>
-                {getError("weightRaw")}
-              </Text>
-            )}
-            {hasError("weight") && (
-              <Text style={tw`text-xs text-red-500 mt-1`}>
-                {getError("weight")}
-              </Text>
-            )}
-          </View>
-
-          {/* Loại hàng hóa */}
-          <View style={tw`mb-4`}>
-            <Text style={tw`text-xs text-gray-500 mb-2`}>
-              Loại hàng hóa <Text style={tw`text-[#00A982]`}>*</Text>
+          {/* Category chung cho cả đơn - 1 hàng duy nhất */}
+          <View style={tw`mb-4 pb-4 border-b border-gray-200`}>
+            <Text style={tw`text-sm font-semibold text-black mb-3`}>
+              Loại hàng hóa (chung) <Text style={tw`text-[#00A982]`}>*</Text>
             </Text>
             <View style={tw`flex-row`}>
-              {categories.map((type) => (
+              {categories.map((type) => {
+                // Nếu là "Khác" thì hiển thị category đã chọn hoặc "Khác"
+                const displayText =
+                  type === "Khác" && !categories.includes(orderCategory)
+                    ? orderCategory
+                    : type;
+                const isSelected =
+                  type === "Khác"
+                    ? !categories.slice(0, -1).includes(orderCategory)
+                    : orderCategory === type;
+
+                return (
+                  <TouchableOpacity
+                    key={type}
+                    style={tw`flex-1 px-3 py-2.5 rounded-full border mr-2 ${
+                      isSelected
+                        ? "bg-[#E6F7F3] border-[#00A982]"
+                        : "bg-white border-gray-300"
+                    } ${
+                      type === categories[categories.length - 1] ? "mr-0" : ""
+                    }`}
+                    onPress={() => {
+                      if (type === "Khác") {
+                        setShowCategoryOverlay(true);
+                      } else {
+                        setOrderCategory(type);
+                      }
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={tw`text-sm text-center ${
+                        isSelected
+                          ? "text-[#00A982] font-semibold"
+                          : "text-black"
+                      }`}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      {displayText}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Danh sách sản phẩm với khả năng thu gọn */}
+          <View style={tw`mb-3`}>
+            <TouchableOpacity
+              style={tw`flex-row items-center justify-between mb-3 py-2 px-3 bg-gray-50 rounded-lg`}
+              onPress={() => setShowProductsList((v) => !v)}
+              activeOpacity={0.7}
+            >
+              <View style={tw`flex-row items-center flex-1`}>
+                <Ionicons name="cube-outline" size={18} color="#00A982" />
+                <Text style={tw`ml-2 text-sm font-semibold text-black`}>
+                  Danh sách sản phẩm
+                </Text>
+                <View style={tw`ml-2 bg-[#00A982] rounded-full px-2 py-0.5`}>
+                  <Text style={tw`text-xs text-white font-semibold`}>
+                    {products.length}
+                  </Text>
+                </View>
+              </View>
+              <Ionicons
+                name={showProductsList ? "chevron-up" : "chevron-down"}
+                size={18}
+                color="#6B6B6B"
+              />
+            </TouchableOpacity>
+
+            {showProductsList && (
+              <>
+                {products.map((product, index) => (
+                  <View
+                    key={product.id}
+                    style={tw`mb-4 p-3 bg-gray-50 rounded-xl border border-gray-200`}
+                  >
+                    {/* Header sản phẩm */}
+                    <View style={tw`flex-row items-center mb-3`}>
+                      <View style={tw`flex-row items-center flex-1`}>
+                        <View
+                          style={tw`w-6 h-6 rounded-full bg-[#00A982] items-center justify-center`}
+                        >
+                          <Text style={tw`text-xs text-white font-bold`}>
+                            {index + 1}
+                          </Text>
+                        </View>
+                        <Text style={tw`ml-2 text-sm font-semibold text-black`}>
+                          {product.name || `Sản phẩm ${index + 1}`}
+                        </Text>
+                      </View>
+                      {products.length > 1 && (
+                        <TouchableOpacity
+                          onPress={() => handleRemoveProduct(product.id)}
+                          style={tw`p-1`}
+                        >
+                          <Ionicons
+                            name="trash-outline"
+                            size={18}
+                            color="#FF4D4F"
+                          />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+
+                    {/* Hình ảnh sản phẩm */}
+                    <View style={tw`mb-3`}>
+                      <Text style={tw`text-xs text-gray-500 mb-2`}>
+                        Hình ảnh sản phẩm
+                      </Text>
+                      {product.imageUri ? (
+                        <View style={tw`relative`}>
+                          <Image
+                            source={{ uri: product.imageUri }}
+                            style={tw`w-full h-40 rounded-lg`}
+                            resizeMode="cover"
+                          />
+                          <TouchableOpacity
+                            style={tw`absolute top-2 right-2 bg-white rounded-full p-1`}
+                            onPress={() =>
+                              handleUpdateProduct(product.id, "imageUri", "")
+                            }
+                          >
+                            <Ionicons name="close" size={20} color="#FF4D4F" />
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <View style={tw`flex-row gap-2`}>
+                          <TouchableOpacity
+                            style={tw`flex-1 border-2 border-dashed border-gray-300 rounded-lg py-4 items-center justify-center`}
+                            onPress={() => handlePickImage(product.id)}
+                          >
+                            <Ionicons
+                              name="images-outline"
+                              size={32}
+                              color="#6B6B6B"
+                            />
+                            <Text style={tw`text-xs text-gray-500 mt-2`}>
+                              Chọn ảnh
+                            </Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={tw`flex-1 border-2 border-dashed border-gray-300 rounded-lg py-4 items-center justify-center`}
+                            onPress={() => handleTakePhoto(product.id)}
+                          >
+                            <Ionicons
+                              name="camera-outline"
+                              size={32}
+                              color="#6B6B6B"
+                            />
+                            <Text style={tw`text-xs text-gray-500 mt-2`}>
+                              Chụp ảnh
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Tên sản phẩm */}
+                    <View style={tw`mb-3`}>
+                      <Text style={tw`text-xs text-gray-500 mb-1`}>
+                        Tên sản phẩm <Text style={tw`text-[#00A982]`}>*</Text>
+                      </Text>
+                      <View style={tw`relative`}>
+                        <TextInput
+                          style={tw`border border-gray-300 rounded-lg px-3 py-2 text-base text-black pr-10`}
+                          placeholder="Nhập tên sản phẩm"
+                          placeholderTextColor="#6B6B6B"
+                          value={product.name}
+                          onChangeText={(text) =>
+                            handleUpdateProduct(product.id, "name", text)
+                          }
+                        />
+                        {product.name.length > 0 && (
+                          <TouchableOpacity
+                            style={tw`absolute right-3 top-1/2 -translate-y-1/2`}
+                            onPress={() =>
+                              handleUpdateProduct(product.id, "name", "")
+                            }
+                          >
+                            <Ionicons
+                              name="close-circle"
+                              size={22}
+                              color="#FF4D4F"
+                            />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+
+                    {/* Kích cỡ */}
+                    <View style={tw`mb-3`}>
+                      <View style={tw`flex-row items-center mb-2`}>
+                        <Text style={tw`text-xs text-gray-500 flex-1`}>
+                          Kích cỡ <Text style={tw`text-[#00A982]`}>*</Text>
+                        </Text>
+                        <TouchableOpacity>
+                          <Text style={tw`text-xs text-[#00A982]`}>
+                            Xem hình ảnh
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                      <Text style={tw`text-xs text-gray-400 mb-2`}>
+                        Tối đa 25x32x12 cm
+                      </Text>
+                      <View style={tw`flex-row justify-between`}>
+                        {sizes.map((size) => (
+                          <TouchableOpacity
+                            key={size}
+                            style={tw`w-12 h-12 rounded-full border items-center justify-center ${
+                              product.size === size
+                                ? "bg-[#E6F7F3] border-[#00A982]"
+                                : "bg-white border-gray-300"
+                            }`}
+                            onPress={() =>
+                              handleUpdateProduct(product.id, "size", size)
+                            }
+                            activeOpacity={0.8}
+                          >
+                            <Text
+                              style={tw`text-sm ${
+                                product.size === size
+                                  ? "text-[#00A982] font-semibold"
+                                  : "text-black"
+                              }`}
+                            >
+                              {size}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+
+                    {/* Khối lượng */}
+                    <View>
+                      <Text style={tw`text-xs text-gray-500 mb-1`}>
+                        Khối lượng (kg){" "}
+                        <Text style={tw`text-[#00A982]`}>*</Text>
+                      </Text>
+                      <View style={tw`relative`}>
+                        <TextInput
+                          style={tw`border border-gray-300 rounded-lg px-3 py-2 text-base text-black pr-10`}
+                          placeholder="kg"
+                          placeholderTextColor="#6B6B6B"
+                          value={
+                            product.weight.length > 0
+                              ? `${parseFloat(
+                                  product.weight
+                                ).toLocaleString()} kg`
+                              : ""
+                          }
+                          onChangeText={(text) => {
+                            const onlyNumber = text.replace(/[^0-9.]/g, "");
+                            handleUpdateProduct(
+                              product.id,
+                              "weight",
+                              onlyNumber
+                            );
+                          }}
+                          keyboardType="numeric"
+                        />
+                        {product.weight.length > 0 && (
+                          <TouchableOpacity
+                            style={tw`absolute right-3 top-1/2 -translate-y-1/2`}
+                            onPress={() =>
+                              handleUpdateProduct(product.id, "weight", "")
+                            }
+                          >
+                            <Ionicons
+                              name="close-circle"
+                              size={22}
+                              color="#FF4D4F"
+                            />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+                ))}
+
+                {/* Nút thêm sản phẩm */}
                 <TouchableOpacity
-                  key={type}
-                  style={tw`px-4 py-2 rounded-full border mr-2 ${
-                    values.selectedCategory === type
-                      ? "bg-[#E6F7F3] border-[#00A982]"
-                      : "bg-white border-gray-300"
-                  }`}
-                  onPress={() => {
-                    setValue("selectedCategory", type);
-                    clearFieldError("selectedCategory");
-                    if (type !== "Khác") {
-                      clearFieldError("otherCategory");
-                    }
-                  }}
+                  style={tw`flex-row items-center justify-center py-3 border border-dashed border-[#00A982] rounded-xl`}
+                  onPress={handleAddProduct}
                   activeOpacity={0.8}
                 >
-                  <Text
-                    style={tw`text-sm ${
-                      values.selectedCategory === type
-                        ? "text-[#00A982] font-semibold"
-                        : "text-black"
-                    }`}
-                  >
-                    {type}
+                  <Ionicons
+                    name="add-circle-outline"
+                    size={20}
+                    color="#00A982"
+                  />
+                  <Text style={tw`ml-2 text-sm text-[#00A982] font-semibold`}>
+                    Thêm sản phẩm
                   </Text>
                 </TouchableOpacity>
-              ))}
-            </View>
-            {hasError("selectedCategory") && (
-              <Text style={tw`text-xs text-red-500 mt-1`}>
-                {getError("selectedCategory")}
-              </Text>
-            )}
-            {values.selectedCategory === "Khác" && (
-              <View style={tw`flex-row items-center mt-2 relative`}>
-                <TextInput
-                  style={tw`flex-1 border ${
-                    hasError("otherCategory")
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } rounded-lg px-3 py-2 text-base text-black pr-10`}
-                  placeholder="Nhập loại hàng hóa khác"
-                  placeholderTextColor="#6B6B6B"
-                  value={values.otherCategory}
-                  onChangeText={(text) => {
-                    setValue("otherCategory", text);
-                    if (text.trim()) {
-                      clearFieldError("otherCategory");
-                    }
-                  }}
-                />
-                {(values.otherCategory?.length ?? 0) > 0 && (
-                  <TouchableOpacity
-                    style={tw`absolute right-3`}
-                    onPress={() => setValue("otherCategory", "")}
-                  >
-                    <Ionicons name="close-circle" size={22} color="#FF4D4F" />
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-            {hasError("otherCategory") && (
-              <Text style={tw`text-xs text-red-500 mt-1`}>
-                {getError("otherCategory")}
-              </Text>
+              </>
             )}
           </View>
 
           {/* Ghi chú cho tài xế */}
           <TouchableOpacity
-            style={tw`flex-row items-center border-t border-gray-200 pt-3`}
+            style={tw`flex-row items-center border-t border-gray-200 pt-3 mt-3`}
             onPress={() => {
               setTempNote(values.driverNote ?? "");
               setShowNoteOverlay(true);
@@ -909,6 +1156,15 @@ export default function ConfirmOrderScreen() {
       />
 
       {renderFooter()}
+
+      {/* Thêm CategorySelectOverlay với allCategories và không có icon */}
+      <CategorySelectOverlay
+        visible={showCategoryOverlay}
+        categories={allCategories}
+        selected={orderCategory}
+        onSelect={setOrderCategory}
+        onCancel={() => setShowCategoryOverlay(false)}
+      />
     </SafeAreaView>
   );
 }
