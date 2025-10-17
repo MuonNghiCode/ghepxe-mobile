@@ -13,6 +13,7 @@ import {
 } from "src/module/orders";
 import { MatchingRouteScreen } from "src/module/match";
 import { UserOrderDetailScreen } from "src/module/order";
+import { EditProfileScreen } from "src/module/profile";
 
 const Stack = createNativeStackNavigator<UserTabParamList>();
 
@@ -31,6 +32,7 @@ export default function UserStackNavigator() {
       />
       <Stack.Screen name="Matching" component={MatchingRouteScreen} />
       <Stack.Screen name="UserOrderDetail" component={UserOrderDetailScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
     </Stack.Navigator>
   );
 }
