@@ -16,6 +16,8 @@ import { OrderCardStatus } from "src/types/order.interface";
 import { useShipRequest } from "src/hooks/useShipRequest";
 import { useAuth } from "src/context/AuthContext";
 import { ShipRequestResponseData } from "src/types";
+import SkeletonPlaceholder from "react-native-skeleton-placeholder";
+import { Dimensions } from "react-native";
 
 const TABS = [
   { key: "ongoing", label: "ĐANG DIỄN RA" },
@@ -27,6 +29,8 @@ type UserOrderScreenNavigationProp = NativeStackNavigationProp<
   UserTabParamList,
   "UserOrder"
 >;
+
+const CARD_WIDTH = Dimensions.get("window").width - 32;
 
 export default function UserOrderScreen() {
   const [tab, setTab] = useState("ongoing");
@@ -163,14 +167,39 @@ export default function UserOrderScreen() {
     </View>
   );
 
+  const renderSkeletonList = () => (
+    <View style={tw`flex-1 px-4 pt-2`}>
+      {[...Array(3)].map((_, idx) => (
+        <View
+          key={idx}
+          style={[
+            tw`mb-3 bg-white rounded-2xl`,
+            { width: CARD_WIDTH, padding: 16, borderRadius: 16 },
+          ]}
+        >
+          {/* Hàng trên: ảnh + thông tin */}
+          <View style={tw`flex-row items-center mb-3`}>
+            <View style={tw`w-16 h-16 rounded-lg bg-gray-200 mr-3`} />
+            <View style={tw`flex-1`}>
+              <View style={tw`h-4 bg-gray-200 rounded w-2/3 mb-2`} />
+              <View style={tw`h-3 bg-gray-100 rounded w-1/2 mb-2`} />
+              <View style={tw`h-3 bg-gray-100 rounded w-1/3`} />
+            </View>
+          </View>
+          {/* Đường phân cách */}
+          <View style={tw`h-1 bg-gray-100 my-2 rounded`} />
+          {/* Hàng dưới: mô tả ngắn */}
+          <View style={tw`h-3 bg-gray-100 rounded w-full mb-2`} />
+          <View style={tw`h-3 bg-gray-100 rounded w-3/4`} />
+        </View>
+      ))}
+    </View>
+  );
+
   const renderOrderList = () => {
     if (loading && !refreshing && shipRequests.length === 0) {
-      return (
-        <View style={tw`flex-1 items-center justify-center`}>
-          <ActivityIndicator size="large" color="#00A982" />
-          <Text style={tw`mt-2 text-gray-500`}>Đang tải...</Text>
-        </View>
-      );
+      // Hiển thị skeleton thay cho spinner
+      return renderSkeletonList();
     }
 
     if (filteredOrders.length === 0) {
