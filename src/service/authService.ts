@@ -2,33 +2,33 @@ import BaseApiService from "src/api/base";
 import { API_ENDPOINTS } from "src/constants";
 import { 
     LoginRequest, 
-    ActualLoginResponse, 
     RegisterRequest, 
     RegisterResponse,
     LogoutRequest,
     LogoutResponse,
-    ProfileResponse
+    ProfileResponse,
+    LoginResponseData,
+    LoginResponse,
+    RegisterResponseData,
+    LogoutResponseData,
+    ProfileResponseData
 } from "src/types";
 
 class AuthService extends BaseApiService {
-    async signin(credentials: LoginRequest): Promise<ActualLoginResponse> {
-        const response = await this.post<ActualLoginResponse>(API_ENDPOINTS.USER.LOGIN, credentials);
-        return response.data || response;
+    async signin(credentials: LoginRequest): Promise<LoginResponse> {
+        return this.post<LoginResponseData>(API_ENDPOINTS.USER.LOGIN, credentials);
     }
 
     async signup(credentials: RegisterRequest): Promise<RegisterResponse> {
-        const response = await this.post<RegisterResponse>(API_ENDPOINTS.USER.REGISTER, credentials);
-        return response.data || response;
+        return this.post<RegisterResponseData>(API_ENDPOINTS.USER.REGISTER, credentials);
     }
 
     async logout(logoutData: LogoutRequest): Promise<LogoutResponse> {
-        const response = await this.post<LogoutResponse>(API_ENDPOINTS.USER.LOGOUT, logoutData);
-        return response.data || response;
+        return this.post<LogoutResponseData>(API_ENDPOINTS.USER.LOGOUT, logoutData);
     }
 
     async getProfile(): Promise<ProfileResponse> {
-        const response = await this.get<ProfileResponse>(API_ENDPOINTS.USER.PROFILE);
-        return response.data || response;
+        return this.get<ProfileResponseData>(API_ENDPOINTS.USER.PROFILE);
     }
 }
 

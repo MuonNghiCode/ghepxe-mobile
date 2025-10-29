@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authService } from "src/service/authService";
-import { LoginRequest, RegisterRequest, ProfileData } from "src/types";
+import { LoginRequest, ProfileResponseData, RegisterRequest } from "src/types";
 import { STORAGE_KEYS } from "src/constants";
 
 type Role = "user" | "driver" | null;
@@ -26,7 +26,7 @@ interface AuthContextType {
   logout: () => Promise<{ success: boolean; message?: string }>;
   getProfile: () => Promise<{
     success: boolean;
-    data?: ProfileData;
+    data?: ProfileResponseData;
     message?: string;
   }>;
   refreshProfile: () => Promise<void>;
@@ -53,7 +53,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
 
-  // Auto-load saved user data khi app khởi động
   useEffect(() => {
     const loadSavedUserData = async () => {
       try {
@@ -108,7 +107,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           [STORAGE_KEYS.USER, JSON.stringify(res.value.user)],
         ]);
 
-        // Gọi getProfile để lấy thông tin đầy đủ (bao gồm phone)
         setTimeout(async () => {
           try {
             await getProfile();

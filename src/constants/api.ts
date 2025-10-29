@@ -13,6 +13,28 @@ export const API_ENDPOINTS = {
     READ_ALL: "/api/User/read",
     HEALTH: "/api/User/health",
   },
+  SHIP_REQUEST: {
+    CREATE: "/api/User/ShipRequest",
+    GET_ALL: "/api/User/ShipRequest",
+    UPDATE: "/api/User/ShipRequest",
+    DELETE: "/api/User/ShipRequest",
+    GET_BY_USER: "/api/User/ShipRequest/user/{userId}",
+    HEALTH: "/api/User/ShipRequest/health",
+    GET_DETAILS: "/api/User/ShipRequest/{shipRequestId}/Item",
+    ADD_ITEM: "/api/User/ShipRequest/{shipRequestId}/Item",
+    UPDATE_ITEM: "/api/User/ShipRequest/Item/{itemId}",
+    DELETE_ITEM: "/api/User/ShipRequest/Item/{itemId}",
+  },
+  GEMINI: {
+    MATCHING: "api/User/Gemini/Matching"
+  },
+  VEHICLE: {
+    CREATE_VEHICLE: "/api/Driver/Vehicle/create"
+  },
+  FILE: {
+    UPLOAD: "/api/User/File/upload",
+    GET_FILE: "/api/User/File/presigned-url/{fileId}"
+  }
 } as const;
 
 export const HTTP_METHODS = {

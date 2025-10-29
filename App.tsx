@@ -4,6 +4,7 @@ import { AuthProvider } from "./src/context/AuthContext";
 import { useFonts } from "expo-font";
 import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
+import { OrderProvider } from "src/context/OrderContext";
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -26,7 +27,9 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
-        <AppNavigator />
+        <OrderProvider>
+          <AppNavigator />
+        </OrderProvider>
       </AuthProvider>
     </GestureHandlerRootView>
   );
