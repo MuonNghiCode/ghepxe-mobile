@@ -13,41 +13,41 @@ export interface LogoutRequest {
     refreshToken: string;
 }
 
-export interface CreateShipRequestRequest {
-    userId: string;
-
-    pickupStreet: string;
-    pickupWard: string;
-    pickupDistrict: string;
-    pickupCity: string;
-    pickupProvince: string;
-    pickupPostalCode: string;
-    pickupCountry: string;
-    pickupLatitude: number;
-    pickupLongitude: number;
-
-    dropoffStreet: string;
-    dropoffWard: string;
-    dropoffDistrict: string;
-    dropoffCity: string;
-    dropoffProvince: string;
-    dropoffPostalCode: string;
-    dropoffCountry: string;
-    dropoffLatitude: number;
-    dropoffLongitude: number;
-
-    pickupWindowStart: string;
-    pickupWindowEnd: string;
-
-    items: CreateShipItemRequest[];
-}
-
 export interface CreateShipItemRequest {
     name: string;
     amount: number;
     weight: number;
     description?: string;
-    imageLink?: string;
-    size?: string;
-    type: string;
+    imageFileId?: string;
+    size: string;
+}
+
+export interface SpecialRequestData {
+    returnDelivery: boolean;
+    loading: boolean;
+    driverAssistance: boolean;
+    smsNotification: boolean;
+    electronicInvoice: boolean;
+}
+
+export interface CreateShipRequestRequest {
+    userId: string;
+    
+    pickupAddress: string;
+    pickupLatitude: number;
+    pickupLongitude: number;
+    
+    dropoffAddress: string;
+    dropoffLatitude: number;
+    dropoffLongitude: number;
+    
+    pickupWindowStart: string;
+    pickupWindowEnd: string;
+    
+    items: CreateShipItemRequest[];
+    itemType: string; // Loại sản phẩm: "Thời trang", "Điện tử", v.v.
+    status?: string;
+    shipType?: string;
+    itemCategory: string; // Loại hàng hóa: "Business" hoặc "Personal"
+    specialRequest?: SpecialRequestData;
 }

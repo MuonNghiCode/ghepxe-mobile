@@ -1,7 +1,6 @@
 import { 
     CreateShipRequestRequest, 
-    CreateShipRequestResponse, 
-    CreateShipRequestResponseData,
+    CreateShipRequestResponse,
     GetShipRequestsResponse,
     GetShipRequestResponse,
     ShipRequestResponseData,
@@ -13,7 +12,7 @@ import { API_ENDPOINTS } from 'src/constants';
 
 class ShipRequestService extends BaseApiService {
     async createShip(data: CreateShipRequestRequest): Promise<CreateShipRequestResponse> {
-        return this.post<CreateShipRequestResponseData>(API_ENDPOINTS.SHIP_REQUEST.CREATE, data);
+        return this.post<string>(API_ENDPOINTS.SHIP_REQUEST.CREATE, data);
     }
 
     async getAllShipRequests(userId: string): Promise<GetShipRequestsResponse> {

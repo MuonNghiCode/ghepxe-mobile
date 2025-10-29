@@ -63,8 +63,6 @@ function parseAddressComponents(addressArr: AddressObject[]) {
 export default function OrderBillingAddressScreen() {
   const [receiverName, setReceiverName] = useState("");
   const [receiverPhone, setReceiverPhone] = useState("");
-  const [cod, setCod] = useState("");
-  const [goodsValue, setGoodsValue] = useState("");
   const [contacts, setContacts] = useState<Contacts.Contact[]>([]);
   const [showContactModal, setShowContactModal] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
@@ -101,8 +99,6 @@ export default function OrderBillingAddressScreen() {
       setAddressNote(pickupLocation.note || "");
       setReceiverName(pickupLocation.receiverName || "");
       setReceiverPhone(pickupLocation.receiverPhone || "");
-      setCod(pickupLocation.cod || "");
-      setGoodsValue(pickupLocation.goodsValue || "");
 
       // Restore vị trí trên map
       setRegion({
@@ -166,8 +162,6 @@ export default function OrderBillingAddressScreen() {
           note: addressNote,
           receiverName,
           receiverPhone,
-          cod,
-          goodsValue,
         });
       }
     } catch (error) {
@@ -210,8 +204,6 @@ export default function OrderBillingAddressScreen() {
             note: addressNote,
             receiverName,
             receiverPhone,
-            cod,
-            goodsValue,
           });
         }
         showSuccess("Đã cập nhật địa chỉ");
@@ -251,8 +243,6 @@ export default function OrderBillingAddressScreen() {
             note: addressNote,
             receiverName,
             receiverPhone,
-            cod,
-            goodsValue,
           });
         }
       });
@@ -285,8 +275,6 @@ export default function OrderBillingAddressScreen() {
           note: addressNote,
           receiverName,
           receiverPhone,
-          cod,
-          goodsValue,
         });
 
         setShowConfirmDialog(false);

@@ -42,12 +42,13 @@ import * as ImagePicker from "expo-image-picker";
 import CategorySelectOverlay from "../components/CategorySelectOverlay";
 import { Product } from "src/types/product.interface";
 
+// Cập nhật interface cho special requests
 const specialRequests = [
-  { label: "Giao hàng về", value: "120,000" },
-  { label: "Bốc hàng", value: "50,000" },
-  { label: "Hỗ trợ tài xế", value: "30,000" },
-  { label: "Nhắn tin SMS", value: "10,000" },
-  { label: "Xuất hóa đơn điện tử", value: "5,000" },
+  { label: "Giao hàng về", value: "120000", key: "returnDelivery" },
+  { label: "Bốc hàng", value: "50000", key: "loading" },
+  { label: "Hỗ trợ tài xế", value: "30000", key: "driverAssistance" },
+  { label: "Nhắn tin SMS", value: "10000", key: "smsNotification" },
+  { label: "Xuất hóa đơn điện tử", value: "5000", key: "electronicInvoice" },
 ];
 
 const sizes = ["S", "M", "L", "XL", "2XL", "3XL"];
@@ -72,39 +73,66 @@ const allCategories = [
 
 export default function ConfirmOrderScreen() {
   const navigation = useNavigation();
-  const [orderCategory, setOrderCategory] = useState(categories[0]);
-  const [showCategoryOverlay, setShowCategoryOverlay] = useState(false);
-  const [showProductsList, setShowProductsList] = useState(true);
-  const [showGoodsInfo, setShowGoodsInfo] = useState(true);
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: Date.now().toString(),
-      name: "",
-      size: sizes[0],
-      weight: "",
-      imageUri: undefined,
-    },
-  ]);
-  const [showNoteOverlay, setShowNoteOverlay] = useState(false);
-  const [tempNote, setTempNote] = useState("");
-  const [showServiceOverlay, setShowServiceOverlay] = useState(false);
-  const [serviceType, setServiceType] = useState("single");
-  const [showGoodsTypeOverlay, setShowGoodsTypeOverlay] = useState(false);
-  const [showPickupTimeOverlay, setShowPickupTimeOverlay] = useState(false);
-  const [pickupTime, setPickupTime] = useState("standard");
-  const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
-  const [totalFee, setTotalFee] = useState(55000);
-  const [showPaymentDetail, setShowPaymentDetail] = useState(false);
 
   const {
     pickupLocation,
     dropoffLocation,
+    orderDraft,
     buildShipRequest,
     setPickupLocation,
     setDropoffLocation,
+    setOrderDraft,
   } = useOrder();
-  const { createShipRequest, loading: creatingOrder } = useShipRequest();
+
+  // Khởi tạo state từ draft hoặc giá trị mặc định
+  const [orderCategory, setOrderCategory] = useState(
+    orderDraft?.orderCategory || categories[0]
+  );
+  const [showCategoryOverlay, setShowCategoryOverlay] = useState(false);
+  const [showProductsList, setShowProductsList] = useState(true);
+  const [showGoodsInfo, setShowGoodsInfo] = useState(true);
+  const [products, setProducts] = useState<Product[]>(
+    orderDraft?.products || [
+      {
+        id: Date.now().toString(),
+        name: "",
+        size: sizes[0],
+        weight: "",
+        imageUri: undefined,
+      },
+    ]
+  );
+  const [showNoteOverlay, setShowNoteOverlay] = useState(false);
+  const [tempNote, setTempNote] = useState("");
+  const [showServiceOverlay, setShowServiceOverlay] = useState(false);
+  const [serviceType, setServiceType] = useState(
+    orderDraft?.serviceType || "single"
+  );
+  const [showGoodsTypeOverlay, setShowGoodsTypeOverlay] = useState(false);
+  const [showPickupTimeOverlay, setShowPickupTimeOverlay] = useState(false);
+  const [pickupTime, setPickupTime] = useState(
+    orderDraft?.pickupTime || "standard"
+  );
+  const [selectedRequests, setSelectedRequests] = useState<{
+    returnDelivery: boolean;
+    loading: boolean;
+    driverAssistance: boolean;
+    smsNotification: boolean;
+    electronicInvoice: boolean;
+  }>(
+    orderDraft?.selectedRequests || {
+      returnDelivery: false,
+      loading: false,
+      driverAssistance: false,
+      smsNotification: false,
+      electronicInvoice: false,
+    }
+  );
+  const [totalFee, setTotalFee] = useState(55000);
+  const [showPaymentDetail, setShowPaymentDetail] = useState(false);
+
   const { user } = useAuth();
+  const { createShipRequest, loading: creatingOrder } = useShipRequest();
   const { toast, showSuccess, showError, showWarning, hideToast } = useToast();
 
   // State cho confirm dialog
@@ -128,13 +156,9 @@ export default function ConfirmOrderScreen() {
   };
 
   const { values, setValue, setValues } = useForm<ShipRequestFormData>({
-    selectedSize: sizes[0],
-    weightRaw: "",
-    weight: 0,
-    selectedCategory: categories[0],
-    otherCategory: "",
-    goodsType: "private" as const,
-    driverNote: "",
+    goodsType:
+      (orderDraft?.goodsType as "private" | "personal") || ("private" as const),
+    driverNote: orderDraft?.driverNote || "",
     pickupLocation: pickupLocation ?? emptyLocation,
     dropoffLocation: dropoffLocation ?? emptyLocation,
   });
@@ -150,20 +174,22 @@ export default function ConfirmOrderScreen() {
     });
   }, [pickupLocation, dropoffLocation]);
 
-  interface SpecialRequest {
-    label: string;
-    value: string;
-  }
+  const handleToggleRequest = (item: (typeof specialRequests)[0]) => {
+    const value: number = parseInt(item.value, 10);
+    const key = item.key as keyof typeof selectedRequests;
 
-  const handleToggleRequest = (item: SpecialRequest) => {
-    const value: number = parseInt(item.value.replace(/\D/g, ""), 10);
-    if (selectedRequests.includes(item.label)) {
-      setSelectedRequests(selectedRequests.filter((r) => r !== item.label));
-      setTotalFee((fee) => fee - value);
-    } else {
-      setSelectedRequests([...selectedRequests, item.label]);
-      setTotalFee((fee) => fee + value);
-    }
+    setSelectedRequests((prev) => {
+      const newState = { ...prev, [key]: !prev[key] };
+
+      // Cập nhật tổng phí
+      if (newState[key]) {
+        setTotalFee((fee) => fee + value);
+      } else {
+        setTotalFee((fee) => fee - value);
+      }
+
+      return newState;
+    });
   };
 
   const handleGoBack = useCallback(() => {
@@ -171,12 +197,50 @@ export default function ConfirmOrderScreen() {
   }, [navigation]);
 
   const handleNavigateBillingAddress = useCallback(() => {
+    // Lưu draft trước khi chuyển màn hình
+    setOrderDraft({
+      products,
+      orderCategory,
+      serviceType,
+      pickupTime,
+      goodsType: values.goodsType,
+      driverNote: values.driverNote || "",
+      selectedRequests,
+    });
     navigation.navigate("OrderBilling" as never);
-  }, [navigation]);
+  }, [
+    navigation,
+    products,
+    orderCategory,
+    serviceType,
+    pickupTime,
+    values.goodsType,
+    values.driverNote,
+    selectedRequests,
+  ]);
 
   const handleNavigateShippingAddress = useCallback(() => {
+    // Lưu draft trước khi chuyển màn hình
+    setOrderDraft({
+      products,
+      orderCategory,
+      serviceType,
+      pickupTime,
+      goodsType: values.goodsType,
+      driverNote: values.driverNote || "",
+      selectedRequests,
+    });
     navigation.navigate("OrderShipping" as never);
-  }, [navigation]);
+  }, [
+    navigation,
+    products,
+    orderCategory,
+    serviceType,
+    pickupTime,
+    values.goodsType,
+    values.driverNote,
+    selectedRequests,
+  ]);
 
   const handleMatchRoute = useCallback(() => {
     navigation.navigate("Matching" as never);
@@ -211,21 +275,52 @@ export default function ConfirmOrderScreen() {
     showSuccess("Đã hoán đổi địa chỉ thành công");
   }, [pickupLocation, dropoffLocation, setPickupLocation, setDropoffLocation]);
 
-  // Hàm tạo đơn với validation
+  // Thêm hàm validate products
+  const validateProducts = () => {
+    // Kiểm tra có ít nhất 1 sản phẩm
+    if (products.length === 0) {
+      showError("Vui lòng thêm ít nhất 1 sản phẩm");
+      return false;
+    }
+
+    // Kiểm tra từng sản phẩm
+    for (let i = 0; i < products.length; i++) {
+      const product = products[i];
+
+      if (!product.name.trim()) {
+        showError(`Vui lòng nhập tên cho sản phẩm ${i + 1}`);
+        return false;
+      }
+
+      if (!product.weight || parseFloat(product.weight) <= 0) {
+        showError(`Vui lòng nhập khối lượng cho sản phẩm ${i + 1}`);
+        return false;
+      }
+
+      if (parseFloat(product.weight) > 1000) {
+        showError(`Khối lượng sản phẩm ${i + 1} không được vượt quá 1000kg`);
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  // Cập nhật handleCreateOrder
   const handleCreateOrder = () => {
     if (!user?.userId) {
       showError("Vui lòng đăng nhập để tạo đơn");
       return;
     }
 
-    // Cập nhật weight từ weightRaw
-    const weight = values.weightRaw ? parseFloat(values.weightRaw) : 0;
-    setValue("weight", weight);
+    // Validate products
+    if (!validateProducts()) {
+      return;
+    }
 
-    // Validate form
+    // Validate form locations
     const formData = {
       ...values,
-      weight,
       pickupLocation,
       dropoffLocation,
     };
@@ -328,26 +423,57 @@ export default function ConfirmOrderScreen() {
         return;
       }
 
-      const items = products.map((product) => ({
-        name: product.name,
-        amount: 1,
-        weight: parseFloat(product.weight),
-        description: values.driverNote || undefined,
-        size: product.size,
-        type: values.goodsType === "private" ? "Private" : "Personal",
-      }));
+      // Map products thành items
+      const items = products.map((product) => {
+        const item: any = {
+          name: product.name,
+          amount: 1,
+          weight: parseFloat(product.weight),
+          size: product.size,
+          imageFileId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        };
+
+        if (values.driverNote) {
+          item.description = values.driverNote;
+        }
+
+        return item;
+      });
 
       const now = new Date();
-      const pickupTime = {
+      const pickupTimeWindow = {
         start: now.toISOString(),
         end: new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString(),
       };
 
-      const shipRequest = buildShipRequest(user.userId, items, pickupTime);
+      // SỬA LẠI:
+      // itemType = loại sản phẩm (orderCategory: "Thời trang", "Điện tử", v.v.)
+      // itemCategory = loại hàng hóa (goodsType: "Business" hoặc "Personal")
+      const itemType = orderCategory; // "Thời trang", "Điện tử", etc.
+      const itemCategory =
+        values.goodsType === "private" ? "Business" : "Personal";
+
+      const shipRequest = buildShipRequest(
+        user.userId,
+        items,
+        pickupTimeWindow,
+        itemType,
+        itemCategory,
+        selectedRequests
+      );
+
+      console.log(
+        "Creating ship request:",
+        JSON.stringify(shipRequest, null, 2)
+      );
+
       const response = await createShipRequest(shipRequest);
+
+      console.log("Response:", JSON.stringify(response, null, 2));
 
       if (response?.isSuccess) {
         showSuccess("Tạo đơn hàng thành công!");
+        setOrderDraft(null);
         setTimeout(() => {
           navigation.dispatch(StackActions.popToTop());
           const parent = navigation.getParent();
@@ -356,9 +482,12 @@ export default function ConfirmOrderScreen() {
           }
         }, 1500);
       } else {
-        showError(response?.error?.description || "Tạo đơn thất bại");
+        const errorMsg = response?.error?.description || "Tạo đơn thất bại";
+        console.error("Create order error:", errorMsg);
+        showError(errorMsg);
       }
     } catch (error: any) {
+      console.error("Create order exception:", error);
       showError(error.message || "Có lỗi xảy ra");
     }
   };
@@ -569,7 +698,7 @@ export default function ConfirmOrderScreen() {
 
       {showGoodsInfo && (
         <>
-          {/* Hàng hóa tư nhân/cá nhân */}
+          {/* itemCategory - Loại hàng hóa (Business/Personal) */}
           <TouchableOpacity
             style={tw`flex-row items-center mb-4 pb-4 border-b border-gray-200`}
             onPress={() => setShowGoodsTypeOverlay(true)}
@@ -586,8 +715,8 @@ export default function ConfirmOrderScreen() {
             />
             <Text style={tw`ml-2 text-sm text-black`}>
               {values.goodsType === "private"
-                ? "Hàng hóa tư nhân"
-                : "Hàng hóa cá nhân"}
+                ? "Hàng hóa doanh nghiệp (Business)"
+                : "Hàng hóa cá nhân (Personal)"}
             </Text>
             <Ionicons
               name="information-circle-outline"
@@ -599,14 +728,13 @@ export default function ConfirmOrderScreen() {
             <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
           </TouchableOpacity>
 
-          {/* Category chung cho cả đơn - 1 hàng duy nhất */}
+          {/* itemType - Loại sản phẩm (Thời trang, Điện tử, v.v.) */}
           <View style={tw`mb-4 pb-4 border-b border-gray-200`}>
             <Text style={tw`text-sm font-semibold text-black mb-3`}>
-              Loại hàng hóa (chung) <Text style={tw`text-[#00A982]`}>*</Text>
+              Loại sản phẩm <Text style={tw`text-[#00A982]`}>*</Text>
             </Text>
             <View style={tw`flex-row`}>
               {categories.map((type) => {
-                // Nếu là "Khác" thì hiển thị category đã chọn hoặc "Khác"
                 const displayText =
                   type === "Khác" && !categories.includes(orderCategory)
                     ? orderCategory
@@ -652,7 +780,7 @@ export default function ConfirmOrderScreen() {
             </View>
           </View>
 
-          {/* Danh sách sản phẩm với khả năng thu gọn */}
+          {/* Danh sách sản phẩm */}
           <View style={tw`mb-3`}>
             <TouchableOpacity
               style={tw`flex-row items-center justify-between mb-3 py-2 px-3 bg-gray-50 rounded-lg`}
@@ -940,13 +1068,16 @@ export default function ConfirmOrderScreen() {
     </View>
   );
 
+  // Cập nhật renderSpecialRequestSection
   const renderSpecialRequestSection = () => (
     <View style={tw`bg-white rounded-2xl mx-4 mt-4 p-4 shadow-lg`}>
       <Text style={tw`text-base font-semibold text-black mb-2`}>
         Yêu cầu đặc biệt
       </Text>
       {specialRequests.map((item) => {
-        const isSelected = selectedRequests.includes(item.label);
+        const key = item.key as keyof typeof selectedRequests;
+        const isSelected = selectedRequests[key];
+
         return (
           <View
             key={item.label}
@@ -963,7 +1094,9 @@ export default function ConfirmOrderScreen() {
                   />
                 </TouchableOpacity>
               </View>
-              <Text style={tw`text-xs text-gray-500 mt-1`}>{item.value}</Text>
+              <Text style={tw`text-xs text-gray-500 mt-1`}>
+                ₫{parseInt(item.value).toLocaleString()}
+              </Text>
             </View>
             <TouchableOpacity
               activeOpacity={0.7}
@@ -1117,7 +1250,9 @@ export default function ConfirmOrderScreen() {
         visible={showPaymentDetail}
         baseFee={55000}
         specialRequests={specialRequests}
-        selectedRequests={selectedRequests}
+        selectedRequests={Object.keys(selectedRequests).filter(
+          (key) => selectedRequests[key as keyof typeof selectedRequests]
+        )}
         totalFee={totalFee}
         onClose={() => setShowPaymentDetail(false)}
       />
@@ -1157,7 +1292,6 @@ export default function ConfirmOrderScreen() {
 
       {renderFooter()}
 
-      {/* Thêm CategorySelectOverlay với allCategories và không có icon */}
       <CategorySelectOverlay
         visible={showCategoryOverlay}
         categories={allCategories}

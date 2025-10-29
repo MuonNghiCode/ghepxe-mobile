@@ -65,9 +65,10 @@ export default function OrderShippingAddressScreen() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [addressNote, setAddressNote] = useState("");
-  // Thêm state cho COD và giá trị hàng hóa
-  const [cod, setCod] = useState("");
-  const [goodsValue, setGoodsValue] = useState("");
+  // XÓA state cho COD và giá trị hàng hóa
+  // const [cod, setCod] = useState("");
+  // const [goodsValue, setGoodsValue] = useState("");
+
   const navigation = useNavigation();
   const [region, setRegion] = useState<any>(null);
   const [selected, setSelected] = useState<any>(null);
@@ -96,8 +97,7 @@ export default function OrderShippingAddressScreen() {
       setAddressNote(dropoffLocation.note || "");
       setReceiverName(dropoffLocation.receiverName || "");
       setReceiverPhone(dropoffLocation.receiverPhone || "");
-      setCod(dropoffLocation.cod || "");
-      setGoodsValue(dropoffLocation.goodsValue || "");
+      // XÓA setCod và setGoodsValue
 
       setRegion({
         latitude: dropoffLocation.latitude,
@@ -153,12 +153,10 @@ export default function OrderShippingAddressScreen() {
           latitude,
           longitude,
           fullAddress: formatted,
-          // Giữ lại thông tin đã nhập
+          // Giữ lại thông tin đã nhập - XÓA cod và goodsValue
           note: addressNote,
           receiverName,
           receiverPhone,
-          cod,
-          goodsValue,
         });
       }
     } catch (error) {
@@ -191,12 +189,10 @@ export default function OrderShippingAddressScreen() {
             latitude: coordinates.latitude,
             longitude: coordinates.longitude,
             fullAddress: currentAddress,
-            // Giữ lại thông tin đã nhập
+            // Giữ lại thông tin đã nhập - XÓA cod và goodsValue
             note: addressNote,
             receiverName,
             receiverPhone,
-            cod,
-            goodsValue,
           });
         }
       });
@@ -261,8 +257,7 @@ export default function OrderShippingAddressScreen() {
           note: addressNote,
           receiverName,
           receiverPhone,
-          cod,
-          goodsValue,
+          // XÓA cod và goodsValue
         });
 
         setShowConfirmDialog(false);
@@ -302,12 +297,10 @@ export default function OrderShippingAddressScreen() {
             latitude,
             longitude,
             fullAddress: addressString,
-            // Giữ lại thông tin đã nhập
+            // Giữ lại thông tin đã nhập - XÓA cod và goodsValue
             note: addressNote,
             receiverName,
             receiverPhone,
-            cod,
-            goodsValue,
           });
         }
         showSuccess("Đã cập nhật địa chỉ");
@@ -540,101 +533,6 @@ export default function OrderShippingAddressScreen() {
     </View>
   );
 
-  const renderCodSection = () => (
-    <View style={tw`border-t border-gray-200 pt-4 w-full px-4`}>
-      <View style={tw`flex-row items-center mb-2`}>
-        <Text style={tw`text-base font-semibold text-black`}>COD</Text>
-        <Ionicons
-          name="information-circle-outline"
-          size={14}
-          color="#6B6B6B"
-          style={tw`ml-1`}
-        />
-      </View>
-      <View
-        style={tw`bg-gray-200 rounded-xl px-3 py-2 flex-row items-center mb-2`}
-      >
-        <TextInput
-          style={tw`flex-1 text-base text-black`}
-          placeholder="Nhập số tiền"
-          placeholderTextColor="#6B6B6B"
-          value={cod}
-          onChangeText={setCod}
-          keyboardType="numeric"
-          editable={true}
-        />
-        {cod.length > 0 && (
-          <TouchableOpacity onPress={() => setCod("")}>
-            <Ionicons
-              name="close-circle"
-              size={20}
-              color="#FF4D4F"
-              style={tw`ml-2`}
-            />
-          </TouchableOpacity>
-        )}
-        <Ionicons
-          name="lock-closed-outline"
-          size={20}
-          color="#6B6B6B"
-          style={tw`ml-2`}
-        />
-      </View>
-      <View style={tw`bg-[#BDE7FF] rounded-lg px-3 py-2 flex-row items-center`}>
-        <Ionicons
-          name="information"
-          size={18}
-          color="#5ABCE5"
-          style={tw`mr-2 p-1 bg-[#005AAE]/80 rounded-full items-center justify-center`}
-        />
-        <Text style={tw`text-xs text-black flex-1 font-semibold`}>
-          Định danh tài khoản để mở mức ứng COD lên đến 1.000.000đ
-        </Text>
-      </View>
-    </View>
-  );
-
-  const renderGoodsValueSection = () => (
-    <View style={tw`border-t border-gray-200 pt-4 w-full px-4`}>
-      <View style={tw`flex-row items-center mb-2`}>
-        <Text style={tw`text-base font-semibold text-black`}>
-          Giá trị hàng hóa
-        </Text>
-        <Ionicons
-          name="information-circle-outline"
-          size={16}
-          color="#6B6B6B"
-          style={tw`ml-1`}
-        />
-      </View>
-      <View
-        style={tw`bg-white rounded-xl border border-gray-300 px-3 py-2 flex-row items-center mb-1`}
-      >
-        <TextInput
-          style={tw`flex-1 text-base text-black`}
-          placeholder="Giá trị hàng hóa"
-          placeholderTextColor="#6B6B6B"
-          value={goodsValue}
-          onChangeText={setGoodsValue}
-          keyboardType="numeric"
-        />
-        {goodsValue.length > 0 && (
-          <TouchableOpacity onPress={() => setGoodsValue("")}>
-            <Ionicons
-              name="close-circle"
-              size={20}
-              color="#FF4D4F"
-              style={tw`ml-2`}
-            />
-          </TouchableOpacity>
-        )}
-      </View>
-      <Text style={tw`text-xs text-gray-500 mt-1`}>
-        Nhập giá trị hàng hóa để được đền bù lên đến 5.000.000đ
-      </Text>
-    </View>
-  );
-
   const renderFooter = () => (
     <View style={tw`absolute bottom-0 left-0 right-0 bg-white px-4 pb-6 pt-3`}>
       <TouchableOpacity
@@ -663,8 +561,7 @@ export default function OrderShippingAddressScreen() {
           >
             {renderAddressSection()}
             {renderReceiverSection()}
-            {renderCodSection()}
-            {renderGoodsValueSection()}
+            {/* XÓA renderCodSection() và renderGoodsValueSection() */}
           </ScrollView>
           {renderFooter()}
         </View>

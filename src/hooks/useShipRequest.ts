@@ -14,8 +14,7 @@ export function useShipRequest() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Kết quả cho từng API
-    const [createResult, setCreateResult] = useState<CreateShipRequestResponse | null>(null);
+    const [createResult, setCreateResult] = useState<string | null>(null);
     const [shipRequests, setShipRequests] = useState<ShipRequestResponseData[]>([]);
     const [shipRequest, setShipRequest] = useState<ShipRequestResponseData | null>(null);
     const [shipRequestItems, setShipRequestItems] = useState<ShipRequestDetailResponseData[]>([]);
@@ -25,14 +24,31 @@ export function useShipRequest() {
         setLoading(true);
         setError(null);
         try {
+            console.log("Sending request:", JSON.stringify(data, null, 2));
+            
             const response = await shipRequestService.createShip(data);
-            setCreateResult(response);
-            if (!response.isSuccess) {
-                setError(response.error.description);
+            
+            console.log("API Response:", JSON.stringify(response, null, 2));
+            
+            if (response.isSuccess) {
+                setCreateResult(response.value);
+                console.log("Order created successfully with ID:", response.value);
+            } else {
+                const errorMsg = response.error?.description || "Unknown error";
+                console.error("API Error:", errorMsg);
+                console.error("Error code:", response.error?.code);
+                setError(errorMsg);
             }
             return response;
         } catch (err: any) {
-            setError(err.message || "Có lỗi xảy ra");
+            console.error("Exception caught:", err);
+            console.error("Exception message:", err.message);
+            console.error("Exception response:", err.response?.data);
+            
+            const errorMsg = err.response?.data?.error?.description || 
+                           err.message || 
+                           "Có lỗi xảy ra";
+            setError(errorMsg);
             return null;
         } finally {
             setLoading(false);
