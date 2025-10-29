@@ -9,6 +9,7 @@ import {
 } from "src/module/router";
 import { DriverOrderDetailScreen } from "src/module/order";
 import { EditProfileScreen } from "src/module/profile";
+import { CreateVehicleScreen, DriverVehicleScreen } from "src/module/vehicle";
 
 const Stack = createNativeStackNavigator<DriverTabParamList>();
 
@@ -32,6 +33,8 @@ export default function UserStackNavigator() {
         component={DriverOrderDetailScreen}
       />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="DriverVehicle" component={DriverVehicleScreen} />
+      <Stack.Screen name="CreateVehicle" component={CreateVehicleScreen} />
     </Stack.Navigator>
   );
 }

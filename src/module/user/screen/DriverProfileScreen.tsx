@@ -30,7 +30,7 @@ export default function DriverProfileScreen() {
     {
       title: "Chức năng",
       items: [
-        { id: "1", title: "Quản lý chuyến xe", icon: "car-outline" },
+        { id: "1", title: "Quản lý xe", icon: "car-outline" },
         { id: "2", title: "Đơn hàng đã ghép", icon: "archive-outline" },
         {
           id: "3",
@@ -83,19 +83,15 @@ export default function DriverProfileScreen() {
   const handleMenuPress = (itemId: string) => {
     console.log(`Pressed item: ${itemId}`);
 
-    // Xử lý navigation cho các menu items
     switch (itemId) {
-      case "6": // Thông tin tài xế - chuyển đến EditProfileScreen
-      case "11": // Đăng nhập & Bảo mật - chuyển đến EditProfileScreen
+      case "1": // Quản lý xe
+        navigation.navigate("DriverVehicle" as never); // Tên màn hình quản lý xe
+        break;
+      case "6": // Thông tin tài xế
+      case "11": // Đăng nhập & Bảo mật
         navigation.navigate("EditProfile" as never);
         break;
-      case "1": // Quản lý chuyến xe
-        // navigation.navigate("ManageTrips" as never);
-        break;
-      case "2": // Đơn hàng đã ghép
-        // navigation.navigate("OrderHistory" as never);
-        break;
-      // Thêm các case khác nếu cần
+      // ...other cases...
       default:
         console.log(`Menu item ${itemId} not implemented yet`);
     }

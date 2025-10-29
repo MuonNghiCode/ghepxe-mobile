@@ -19,6 +19,8 @@ export type DriverTabParamList = {
   DriverOrder: undefined;
   Order: { order: any };
   EditProfile: undefined;
+  DriverVehicle: undefined;
+  CreateVehicle: undefined;
 };
 
 export type UserTabParamList = {
