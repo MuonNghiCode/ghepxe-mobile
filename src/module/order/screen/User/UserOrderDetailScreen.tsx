@@ -103,33 +103,106 @@ const STATUS_IMAGE = {
   cancelled: require("../../../../assets/icons/cancelled.png"),
 };
 
+const CATEGORY_CONFIG: Record<
+  string,
+  { label: string; icon: string; color: string }
+> = {
+  Personal: { label: "Hàng cá nhân", icon: "person-outline", color: "#3B82F6" },
+  Business: {
+    label: "Hàng doanh nghiệp",
+    icon: "briefcase-outline",
+    color: "#00A982",
+  },
+};
+
+const PRODUCT_TYPE_CONFIG: Record<
+  string,
+  { label: string; icon: string; color: string }
+> = {
+  "Thời trang": {
+    label: "Thời trang",
+    icon: "shirt-outline",
+    color: "#A855F7",
+  },
+  "Điện tử": { label: "Điện tử", icon: "laptop-outline", color: "#F59E42" },
+  "Mỹ phẩm": { label: "Mỹ phẩm", icon: "leaf-outline", color: "#F472B6" },
+  "Thực phẩm": {
+    label: "Thực phẩm",
+    icon: "fast-food-outline",
+    color: "#22D3EE",
+  },
+  "Sách vở": { label: "Sách vở", icon: "book-outline", color: "#FBBF24" },
+  "Đồ gia dụng": {
+    label: "Đồ gia dụng",
+    icon: "home-outline",
+    color: "#F87171",
+  },
+  "Đồ chơi": {
+    label: "Đồ chơi",
+    icon: "game-controller-outline",
+    color: "#34D399",
+  },
+  "Thể thao": {
+    label: "Thể thao",
+    icon: "basketball-outline",
+    color: "#F59E42",
+  },
+  "Nội thất": { label: "Nội thất", icon: "bed-outline", color: "#A3E635" },
+  "Trang sức": {
+    label: "Trang sức",
+    icon: "diamond-outline",
+    color: "#F472B6",
+  },
+};
+
+const SPECIAL_REQUEST_CONFIG = [
+  {
+    key: "returnDelivery",
+    label: "Giao hàng về",
+    icon: "arrow-undo-outline",
+    color: "#F59E42",
+  },
+  {
+    key: "loading",
+    label: "Bốc hàng",
+    icon: "cube-outline",
+    color: "#34D399",
+  },
+  {
+    key: "driverAssistance",
+    label: "Hỗ trợ tài xế",
+    icon: "hand-left-outline",
+    color: "#A855F7",
+  },
+  {
+    key: "smsNotification",
+    label: "Nhắn tin SMS",
+    icon: "chatbubble-outline",
+    color: "#3B82F6",
+  },
+  {
+    key: "electronicInvoice",
+    label: "Hóa đơn điện tử",
+    icon: "document-text-outline",
+    color: "#F472B6",
+  },
+];
+
 export default function UserOrderDetailScreen() {
   const route = useRoute<UserOrderDetailScreenRouteProp>();
   const navigation = useNavigation();
 
-  // Lấy data trực tiếp từ params
   const [orderData, setOrderData] = useState<ShipRequestResponseData | null>(
     route.params?.orderData || null
   );
 
   const shipRequestId = route.params?.shipRequestId || route.params?.id;
 
-  // Debug log
   useEffect(() => {
     console.log("Route params:", route.params);
-    console.log("Order data from params:", route.params?.orderData);
-    console.log("ShipRequestId:", shipRequestId);
-  }, [route.params, shipRequestId]);
+    console.log("Order data:", orderData);
+  }, [route.params, orderData]);
 
-  // Nếu không có data trong params, thử load từ API (optional)
-  useEffect(() => {
-    if (!orderData && shipRequestId) {
-      console.log("No order data in params, need to fetch from API");
-      // Bạn có thể implement API call ở đây nếu cần
-    }
-  }, [orderData, shipRequestId]);
-
-  // Xác định order status
   const getOrderStatus = (): OrderStatus => {
     return (route.params?.orderStatus as OrderStatus) || "waiting";
   };
@@ -151,7 +224,6 @@ export default function UserOrderDetailScreen() {
     return orderData.items.length * 55000;
   };
 
-  // --- Render functions ---
   const renderHeader = () => (
     <View
       style={tw`flex-row items-center justify-between px-4 py-3 bg-white border-b border-gray-100`}
@@ -209,8 +281,8 @@ export default function UserOrderDetailScreen() {
             latitude: dropoffLat,
             longitude: dropoffLng,
           }}
-          pickupAddress={`${orderData.pickupStreet}, ${orderData.pickupDistrict}, ${orderData.pickupProvince}`}
-          deliveryAddress={`${orderData.dropoffStreet}, ${orderData.dropoffDistrict}, ${orderData.dropoffProvince}`}
+          pickupAddress={orderData.pickupAddress}
+          deliveryAddress={orderData.dropoffAddress}
           orderStatus={getOrderStatus()}
           statusImage={STATUS_IMAGE[getOrderStatus()]}
           enableVietnameseRoute={true}
@@ -232,12 +304,15 @@ export default function UserOrderDetailScreen() {
     <View
       style={tw`bg-white px-4 py-4 mb-4 flex-row items-center justify-between border-b border-gray-200`}
     >
-      <Text style={tw`text-base font-semibold text-black`} numberOfLines={1}>
+      <Text
+        style={tw`text-base font-semibold text-black flex-1`}
+        numberOfLines={2}
+      >
         {config.header}
       </Text>
       <Image
         source={STATUS_IMAGE[getOrderStatus()]}
-        style={tw`w-10 h-10`}
+        style={tw`w-10 h-10 ml-2`}
         resizeMode="contain"
       />
     </View>
@@ -246,8 +321,17 @@ export default function UserOrderDetailScreen() {
   const renderOrderInfoSection = () => {
     if (!orderData) return null;
 
+    const category =
+      CATEGORY_CONFIG[orderData.itemCategory] || CATEGORY_CONFIG["Personal"];
+    const productType = PRODUCT_TYPE_CONFIG[orderData.itemType] || {
+      label: orderData.itemType,
+      icon: "cube-outline",
+      color: "#6B7280",
+    };
+
     return (
       <View style={tw`bg-white px-4 py-4 mb-4 border-b border-gray-200`}>
+        {/* Mã đơn hàng */}
         <View style={tw`flex-row items-center mb-2`}>
           <Text style={tw`font-semibold text-black text-sm`}>
             Mã đơn hàng: #{orderData.shipRequestId.slice(0, 8).toUpperCase()}
@@ -256,8 +340,16 @@ export default function UserOrderDetailScreen() {
             <Ionicons name="copy-outline" size={16} color="#00A982" />
           </TouchableOpacity>
         </View>
-        <Text style={tw`text-xs text-gray-500 mb-2`}>
-          {new Date(orderData.pickupWindowStart).toLocaleString("vi-VN")}
+
+        {/* Thời gian */}
+        <Text style={tw`text-xs text-gray-500 mb-3`}>
+          {new Date(orderData.pickupWindowStart).toLocaleString("vi-VN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </Text>
 
         {/* Địa chỉ lấy hàng */}
@@ -268,30 +360,28 @@ export default function UserOrderDetailScreen() {
             <MaterialCommunityIcons name="stop" size={16} color="white" />
           </View>
           <View style={tw`flex-1 ml-2`}>
-            <Text style={tw`font-semibold text-black`}>
-              {orderData.pickupStreet}
+            <Text style={tw`font-semibold text-black text-sm`}>
+              Điểm lấy hàng
             </Text>
-            <Text style={tw`text-xs text-gray-500`}>
-              {orderData.pickupWard && `${orderData.pickupWard}, `}
-              {orderData.pickupDistrict}, {orderData.pickupProvince}
+            <Text style={tw`text-xs text-gray-600 mt-1`}>
+              {orderData.pickupAddress}
             </Text>
           </View>
         </View>
 
         {/* Địa chỉ giao hàng */}
-        <View style={tw`flex-row items-start`}>
+        <View style={tw`flex-row items-start mb-3`}>
           <View
             style={tw`w-6 h-6 rounded-full bg-[#00A982] items-center justify-center mr-2 mt-1`}
           >
             <Entypo name="arrow-down" size={16} color="#fff" />
           </View>
           <View style={tw`flex-1 ml-2`}>
-            <Text style={tw`font-semibold text-black`}>
-              {orderData.dropoffStreet}
+            <Text style={tw`font-semibold text-black text-sm`}>
+              Điểm giao hàng
             </Text>
-            <Text style={tw`text-xs text-gray-500`}>
-              {orderData.dropoffWard && `${orderData.dropoffWard}, `}
-              {orderData.dropoffDistrict}, {orderData.dropoffProvince}
+            <Text style={tw`text-xs text-gray-600 mt-1`}>
+              {orderData.dropoffAddress}
             </Text>
           </View>
         </View>
@@ -299,36 +389,105 @@ export default function UserOrderDetailScreen() {
     );
   };
 
-  const renderDriverSection = () => (
-    <View
-      style={tw`bg-white px-4 py-4 mb-4 flex-row items-center justify-between border-b border-gray-200`}
-    >
-      <View style={tw`w-8 h-8 rounded-full bg-gray-300 mr-3`} />
-      <View style={tw`flex-1`}>
-        <Text style={tw`font-semibold text-sm text-black`}>{driver.name}</Text>
-        <Text style={tw`text-xs text-gray-500 mt-1`}>{driver.phone}</Text>
-      </View>
-      <View style={tw`flex-row items-center ml-3`}>
-        {config.showCall && (
-          <TouchableOpacity style={tw`mr-3`}>
-            <Ionicons name="call-outline" size={20} color="#222" />
-          </TouchableOpacity>
-        )}
-        {config.showChat && (
-          <TouchableOpacity>
-            <Ionicons
-              name="chatbubble-ellipses-outline"
-              size={20}
-              color="#222"
+  const renderDriverSection = () => {
+    if (!orderData) return null;
+
+    // Nếu có driver thì hiển thị thông tin driver từ API
+    if (orderData.driverId && orderData.driverName) {
+      return (
+        <View
+          style={tw`bg-white px-4 py-4 mb-4 flex-row items-center justify-between border-b border-gray-200`}
+        >
+          {/* Avatar */}
+          {orderData.driverAvatarUrl ? (
+            <Image
+              source={{ uri: orderData.driverAvatarUrl }}
+              style={tw`w-12 h-12 rounded-full mr-3`}
             />
-          </TouchableOpacity>
-        )}
+          ) : (
+            <View
+              style={tw`w-12 h-12 rounded-full bg-gray-300 mr-3 items-center justify-center`}
+            >
+              <Ionicons name="person" size={24} color="#6B6B6B" />
+            </View>
+          )}
+
+          {/* Driver info */}
+          <View style={tw`flex-1`}>
+            <View style={tw`flex-row items-center`}>
+              <Text style={tw`font-semibold text-sm text-black`}>
+                {orderData.driverName}
+              </Text>
+              {orderData.driverRating && (
+                <View style={tw`flex-row items-center ml-2`}>
+                  <Ionicons name="star" size={14} color="#FFD700" />
+                  <Text style={tw`text-xs text-gray-600 ml-1`}>
+                    {orderData.driverRating.toFixed(1)}
+                  </Text>
+                </View>
+              )}
+            </View>
+            {orderData.driverPhone && (
+              <Text style={tw`text-xs text-gray-500 mt-1`}>
+                {orderData.driverPhone}
+              </Text>
+            )}
+          </View>
+
+          {/* Actions */}
+          <View style={tw`flex-row items-center ml-3`}>
+            {config.showCall && orderData.driverPhone && (
+              <TouchableOpacity style={tw`mr-3`}>
+                <Ionicons name="call-outline" size={22} color="#222" />
+              </TouchableOpacity>
+            )}
+            {config.showChat && (
+              <TouchableOpacity>
+                <Ionicons
+                  name="chatbubble-ellipses-outline"
+                  size={22}
+                  color="#222"
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      );
+    }
+
+    // Nếu chưa có driver (status = pending)
+    return (
+      <View style={tw`bg-white px-4 py-4 mb-4 border-b border-gray-200`}>
+        <View style={tw`flex-row items-center`}>
+          <View
+            style={tw`w-12 h-12 rounded-full bg-gray-200 mr-3 items-center justify-center`}
+          >
+            <Ionicons name="person-outline" size={24} color="#9CA3AF" />
+          </View>
+          <View style={tw`flex-1`}>
+            <Text style={tw`font-semibold text-sm text-black`}>
+              Đang tìm tài xế
+            </Text>
+            <Text style={tw`text-xs text-gray-500 mt-1`}>
+              Vui lòng đợi trong giây lát
+            </Text>
+          </View>
+          <ActivityIndicator size="small" color="#00A982" />
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   const renderItemsSection = () => {
-    if (!orderData?.items) return null;
+    if (!orderData?.items || orderData.items.length === 0) return null;
+
+    const category =
+      CATEGORY_CONFIG[orderData.itemCategory] || CATEGORY_CONFIG["Personal"];
+    const productType = PRODUCT_TYPE_CONFIG[orderData.itemType] || {
+      label: orderData.itemType,
+      icon: "cube-outline",
+      color: "#6B7280",
+    };
 
     return (
       <View style={tw`bg-white px-4 py-4 mb-4`}>
@@ -342,66 +501,135 @@ export default function UserOrderDetailScreen() {
           </Text>
         </View>
 
+        {/* Loại hàng hóa, loại sản phẩm, loại dịch vụ - nằm ngang, không xuống hàng */}
+        <View style={tw`flex-row items-center mb-3`}>
+          <View
+            style={tw`flex-row items-center bg-blue-50 rounded-full px-3 py-1 mr-2`}
+          >
+            {/* <Ionicons
+              name={category.icon as any}
+              size={16}
+              color={category.color}
+            /> */}
+            <Text
+              style={[
+                tw`ml-1 text-xs font-semibold`,
+                { color: category.color },
+              ]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {category.label}
+            </Text>
+          </View>
+          <View
+            style={tw`flex-row items-center bg-purple-50 rounded-full px-3 py-1 mr-2`}
+          >
+            {/* <Ionicons
+              name={productType.icon as any}
+              size={16}
+              color={productType.color}
+            /> */}
+            <Text
+              style={[
+                tw`ml-1 text-xs font-semibold`,
+                { color: productType.color },
+              ]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {productType.label}
+            </Text>
+          </View>
+          <View style={tw`bg-orange-100 rounded-full px-3 py-1`}>
+            <Text
+              style={tw`text-xs text-orange-600 font-semibold`}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {orderData.shipType}
+            </Text>
+          </View>
+        </View>
+
         {/* Danh sách kiện hàng */}
         {orderData.items.map((item, idx) => (
           <View
             key={item.itemId}
-            style={tw`flex-row items-center py-3 ${
+            style={tw`py-3 ${
               idx < orderData.items.length - 1 ? "border-b border-gray-100" : ""
             }`}
           >
-            <Image
-              source={
-                item.imageLink
-                  ? { uri: item.imageLink }
-                  : require("../../../../assets/pictures/home/ad1.png")
-              }
-              style={tw`w-12 h-12 rounded mr-3`}
-              resizeMode="cover"
-            />
-            <View style={tw`flex-1`}>
-              <Text style={tw`text-sm text-black`} numberOfLines={2}>
-                {item.name}
-              </Text>
-              <View style={tw`flex-row items-center mt-1`}>
-                <Text style={tw`text-xs text-gray-500 mr-2`}>
-                  SL: {item.amount}
-                </Text>
-                <View style={tw`bg-[#00A982] rounded px-2 py-0.5`}>
-                  <Text style={tw`text-xs text-white font-semibold`}>
-                    {item.weight}kg
-                  </Text>
+            <View style={tw`flex-row items-start`}>
+              {/* Image */}
+              {item.imageUrl ? (
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  style={tw`w-16 h-16 rounded-lg mr-3`}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View
+                  style={tw`w-16 h-16 rounded-lg bg-gray-200 mr-3 items-center justify-center`}
+                >
+                  <Ionicons name="cube-outline" size={32} color="#9CA3AF" />
                 </View>
-                {item.size && (
-                  <View style={tw`bg-blue-100 rounded px-2 py-0.5 ml-2`}>
-                    <Text style={tw`text-xs text-blue-600 font-semibold`}>
-                      {item.size}
+              )}
+
+              {/* Item info */}
+              <View style={tw`flex-1`}>
+                <Text
+                  style={tw`text-sm font-semibold text-black`}
+                  numberOfLines={2}
+                >
+                  {item.name}
+                </Text>
+
+                {item.description && (
+                  <Text
+                    style={tw`text-xs text-gray-500 mt-1`}
+                    numberOfLines={2}
+                  >
+                    {item.description}
+                  </Text>
+                )}
+
+                <View style={tw`flex-row items-center mt-2 flex-wrap`}>
+                  <View style={tw`flex-row items-center mr-3`}>
+                    <Text style={tw`text-xs text-gray-500`}>SL: </Text>
+                    <Text style={tw`text-xs text-black font-semibold`}>
+                      {item.amount}
                     </Text>
                   </View>
-                )}
-              </View>
-              {item.description && (
-                <Text style={tw`text-xs text-gray-500 mt-1`} numberOfLines={2}>
-                  {item.description}
-                </Text>
-              )}
-              <View
-                style={tw`bg-purple-100 rounded px-2 py-0.5 mt-2 self-start`}
-              >
-                <Text style={tw`text-xs text-purple-600 font-semibold`}>
-                  {item.type}
-                </Text>
+
+                  <View style={tw`bg-[#E6F7F3] rounded-full px-2 py-1 mr-2`}>
+                    <Text style={tw`text-xs text-[#00A982] font-semibold`}>
+                      {item.weight}kg
+                    </Text>
+                  </View>
+
+                  {item.size && (
+                    <View style={tw`bg-blue-100 rounded-full px-2 py-1`}>
+                      <Text style={tw`text-xs text-blue-600 font-semibold`}>
+                        {item.size}
+                      </Text>
+                    </View>
+                  )}
+                </View>
               </View>
             </View>
           </View>
         ))}
 
+        {/* Yêu cầu đặc biệt */}
+        {renderSpecialRequestSection()}
+
         {/* Tổng cộng */}
         <View
-          style={tw`flex-row items-center justify-between py-3 border-t border-gray-200 mt-2`}
+          style={tw`flex-row items-center justify-between py-4 border-t border-gray-200 mt-4`}
         >
           <Text style={tw`text-base font-semibold text-black`}>Tổng cộng</Text>
-          <Text style={tw`text-lg text-[#00A982] font-bold`}>
+          <Text style={tw`text-xl text-[#00A982] font-bold`}>
             ₫{calculateTotalPrice().toLocaleString()}
           </Text>
         </View>
@@ -411,42 +639,82 @@ export default function UserOrderDetailScreen() {
 
   const renderFooterActions = () => (
     <View
-      style={tw`absolute bottom-0 left-0 right-0 bg-white px-4 pb-6 pt-3 flex-row justify-center`}
+      style={tw`absolute bottom-0 left-0 right-0 bg-white px-4 pb-6 pt-3 border-t border-gray-200`}
     >
-      {config.showCancel && (
-        <TouchableOpacity
-          style={tw`flex-1 bg-[#FF3B30] rounded-xl py-3 mx-1 shadow items-center`}
-          activeOpacity={0.85}
-        >
-          <Text style={tw`text-white font-bold text-base`}>
-            {config.buttonText}
-          </Text>
-        </TouchableOpacity>
-      )}
-      {config.showReorder && (
-        <TouchableOpacity
-          style={tw`flex-1 bg-[#00A982] rounded-xl py-3 mx-1 shadow items-center`}
-          activeOpacity={0.85}
-        >
-          <Text style={tw`text-white font-bold text-base`}>
-            {config.buttonText}
-          </Text>
-        </TouchableOpacity>
-      )}
-      {config.showReport && (
-        <TouchableOpacity
-          style={tw`flex-1 bg-[#FF3B30] rounded-xl py-3 mx-1 shadow items-center`}
-          activeOpacity={0.85}
-        >
-          <Text style={tw`text-white font-bold text-base`}>
-            {config.reportText}
-          </Text>
-        </TouchableOpacity>
-      )}
+      <View style={tw`flex-row gap-2`}>
+        {config.showCancel && (
+          <TouchableOpacity
+            style={tw`flex-1 bg-[#FF3B30] rounded-xl py-3 shadow items-center`}
+            activeOpacity={0.85}
+          >
+            <Text style={tw`text-white font-bold text-base`}>
+              {config.buttonText}
+            </Text>
+          </TouchableOpacity>
+        )}
+        {config.showReorder && (
+          <TouchableOpacity
+            style={tw`flex-1 bg-[#00A982] rounded-xl py-3 shadow items-center`}
+            activeOpacity={0.85}
+          >
+            <Text style={tw`text-white font-bold text-base`}>
+              {config.buttonText}
+            </Text>
+          </TouchableOpacity>
+        )}
+        {config.showReport && (
+          <TouchableOpacity
+            style={tw`flex-1 border-2 border-[#FF3B30] rounded-xl py-3 shadow items-center`}
+            activeOpacity={0.85}
+          >
+            <Text style={tw`text-[#FF3B30] font-bold text-base`}>
+              {config.reportText}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 
-  // Error state - không có loading vì data đã có từ params
+  const renderSpecialRequestSection = () => {
+    if (!orderData?.specialRequest) return null;
+
+    const activeRequests = SPECIAL_REQUEST_CONFIG.filter(
+      (req) =>
+        orderData.specialRequest?.[
+          req.key as keyof typeof orderData.specialRequest
+        ]
+    );
+
+    return (
+      <View style={tw`mt-4 pt-4 border-t border-gray-200`}>
+        <Text style={tw`text-sm font-semibold text-black mb-2`}>
+          Yêu cầu đặc biệt
+        </Text>
+        {activeRequests.length === 0 ? (
+          <Text style={tw`text-xs text-gray-500`}>
+            Không có yêu cầu đặc biệt
+          </Text>
+        ) : (
+          <View style={tw`flex-row flex-wrap gap-2`}>
+            {activeRequests.map((req) => (
+              <View
+                key={req.key}
+                style={tw`flex-row items-center bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2`}
+              >
+                <Ionicons name={req.icon as any} size={14} color={req.color} />
+                <Text style={[tw`ml-1 text-xs`, { color: req.color }]}>
+                  {req.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // Error state
   if (!orderData) {
     return (
       <SafeAreaView style={tw`flex-1 bg-white`}>
@@ -476,8 +744,8 @@ export default function UserOrderDetailScreen() {
       {renderHeader()}
       {renderOrderMap()}
       <ScrollView
-        style={[tw`bg-gray-200 rounded-t-3xl`, { marginTop: -100 }]}
-        contentContainerStyle={tw`pb-20`}
+        style={[tw`bg-gray-50 rounded-t-3xl`, { marginTop: -32 }]}
+        contentContainerStyle={tw`pb-24`}
         showsVerticalScrollIndicator={false}
       >
         {renderStatusSection()}

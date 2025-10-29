@@ -141,53 +141,19 @@ export const OrderMap: React.FC<OrderMapProps> = ({
         <Ionicons name="scan-outline" size={20} color="#00A982" />
       </TouchableOpacity>
 
-      {/* Icon trạng thái trên map */}
-      <TouchableOpacity
-        style={[
-          tw`absolute right-4`,
-          {
-            bottom: 80,
-            backgroundColor: "#fff",
-            borderRadius: 9999,
-            padding: 8,
-            shadowColor: "#000",
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 3,
-          },
-        ]}
+      {/* Khoảng cách & thời gian */}
+      <View
+        style={tw`absolute bottom-7 left-4 right-4 flex-row items-center justify-center bg-black/70 rounded-xl px-4 py-2`}
       >
-        <Image source={statusImage} style={tw`w-6 h-6`} resizeMode="contain" />
-      </TouchableOpacity>
-
-      {/* Hiển thị distance và duration */}
-      {(distance || duration) && (
-        <View
-          style={[
-            tw`absolute left-4`,
-            {
-              bottom: 24,
-              backgroundColor: "#fff",
-              borderRadius: 12,
-              padding: 8,
-              shadowColor: "#000",
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              elevation: 3,
-            },
-          ]}
-        >
-          <Text style={tw`text-xs font-semibold text-black`}>
-            {distance} • {duration}
-            {orderType === "grouped" && customers.length > 0 && (
-              <Text style={tw`text-xs text-gray-500`}>
-                {" "}
-                • {customers.length} điểm
-              </Text>
-            )}
-          </Text>
-        </View>
-      )}
+        <Ionicons name="car-outline" size={18} color="#fff" />
+        <Text style={tw`ml-2 text-white text-sm`}>
+          {distance ? `${distance}` : "--"}
+        </Text>
+        <Ionicons name="time-outline" size={18} color="#fff" style={tw`ml-4`} />
+        <Text style={tw`ml-2 text-white text-sm`}>
+          {duration ? `${duration}` : "--"}
+        </Text>
+      </View>
     </View>
   );
 };

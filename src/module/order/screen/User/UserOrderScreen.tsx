@@ -39,6 +39,7 @@ export default function UserOrderScreen() {
   // Lấy danh sách ship requests khi component mount
   useEffect(() => {
     if (user?.userId) {
+      console.log("Fetching ship requests for user:", user.userId);
       getAllShipRequests(user.userId);
     }
   }, [user?.userId]);
@@ -47,18 +48,33 @@ export default function UserOrderScreen() {
   useFocusEffect(
     useCallback(() => {
       if (user?.userId) {
+        console.log("Refreshing ship requests");
         getAllShipRequests(user.userId);
       }
     }, [user?.userId])
   );
 
-  // Hàm xác định status của đơn hàng (tạm thời, sau này sẽ có từ backend)
+  // Hàm xác định status của đơn hàng theo backend status
   const getOrderStatus = (
     shipRequest: ShipRequestResponseData
   ): OrderCardStatus => {
-    // Logic tạm thời - sau này sẽ có status từ backend
-    // Bạn có thể thêm trường status vào ShipRequestResponseData
-    return "pending"; // Mặc định là pending
+    const status = shipRequest.status?.toLowerCase();
+
+    switch (status) {
+      case "pending":
+        return "pending";
+      case "accepted":
+      case "picking":
+      case "delivering":
+        return "picking";
+      case "delivered":
+      case "completed":
+        return "review";
+      case "cancelled":
+        return "cancelled";
+      default:
+        return "pending";
+    }
   };
 
   // Filter orders theo tab
@@ -81,13 +97,34 @@ export default function UserOrderScreen() {
 
   const handleCardPress = useCallback(
     (shipRequest: ShipRequestResponseData) => {
-      console.log("Navigating with shipRequestId:", shipRequest.shipRequestId);
+      console.log("Navigating with shipRequest:", {
+        id: shipRequest.shipRequestId,
+        status: shipRequest.status,
+      });
 
-      // Truyền cả data luôn, không chỉ ID
+      // Map backend status sang UI status
+      let orderStatus: "waiting" | "delivering" | "delivered" | "cancelled" =
+        "waiting";
+      const status = shipRequest.status?.toLowerCase();
+
+      if (status === "pending") {
+        orderStatus = "waiting";
+      } else if (
+        status === "accepted" ||
+        status === "picking" ||
+        status === "delivering"
+      ) {
+        orderStatus = "delivering";
+      } else if (status === "delivered" || status === "completed") {
+        orderStatus = "delivered";
+      } else if (status === "cancelled") {
+        orderStatus = "cancelled";
+      }
+
       navigation.navigate("UserOrderDetail", {
         shipRequestId: shipRequest.shipRequestId,
-        orderStatus: "waiting",
-        orderData: shipRequest, // Thêm này
+        orderStatus: orderStatus,
+        orderData: shipRequest,
       });
     },
     [navigation]
@@ -138,8 +175,8 @@ export default function UserOrderScreen() {
 
     if (filteredOrders.length === 0) {
       return (
-        <View style={tw`flex-1 items-center justify-center`}>
-          <Text style={tw`text-gray-500 text-base`}>
+        <View style={tw`flex-1 items-center justify-center px-4`}>
+          <Text style={tw`text-gray-500 text-base text-center`}>
             {tab === "ongoing" && "Chưa có đơn hàng đang diễn ra"}
             {tab === "completed" && "Chưa có đơn hàng hoàn thành"}
             {tab === "cancelled" && "Chưa có đơn hàng bị hủy"}
@@ -162,25 +199,28 @@ export default function UserOrderScreen() {
         }
       >
         {filteredOrders.map((shipRequest) => {
-          const firstItem = shipRequest.items[0];
+          const firstItem = shipRequest.items?.[0];
+          const totalWeight =
+            shipRequest.items?.reduce(
+              (sum, item) => sum + (item.weight || 0),
+              0
+            ) || 0;
+
           return (
             <UserOrderCard
               key={shipRequest.shipRequestId}
               status={getOrderStatus(shipRequest)}
-              productImage={firstItem?.imageLink || ""}
+              productImage={firstItem?.imageUrl || ""}
               productName={firstItem?.name || "Không có tên"}
-              quantity={shipRequest.items.length}
-              weight={shipRequest.items
-                .reduce((sum, item) => sum + item.weight, 0)
-                .toString()}
-              price={55000} // Giá tạm thời
-              pickupAddress={`${shipRequest.pickupStreet}, ${shipRequest.pickupDistrict}, ${shipRequest.pickupProvince}`}
-              deliveryAddress={`${shipRequest.dropoffStreet}, ${shipRequest.dropoffDistrict}, ${shipRequest.dropoffProvince}`}
-              headerText={new Date(
-                shipRequest.pickupWindowStart
-              ).toLocaleString("vi-VN")}
-              tagText={firstItem?.type || ""}
-              showMore={shipRequest.items.length > 1}
+              quantity={shipRequest.items?.length || 0}
+              weight={totalWeight.toString()}
+              // Format currency cho giá
+              price={Number(55000).toLocaleString("vi-VN")}
+              pickupAddress={shipRequest.pickupAddress || "Không có địa chỉ"}
+              deliveryAddress={shipRequest.dropoffAddress || "Không có địa chỉ"}
+              // Không truyền headerText để dùng config.header mặc định
+              // headerText={...} <-- XÓA DÒNG NÀY
+              showMore={(shipRequest.items?.length || 0) > 1}
               onReview={() => {}}
               onPress={() => handleCardPress(shipRequest)}
             />

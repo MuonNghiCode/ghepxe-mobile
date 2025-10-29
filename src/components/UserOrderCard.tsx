@@ -190,7 +190,7 @@ export default function UserOrderCard({
         style={tw`flex-row items-center justify-between px-4 py-2 border-t border-gray-100`}
       >
         <Text style={tw`text-xs text-gray-500`}>
-          Số lượng: {quantity} | {weight} | {price}
+          Số lượng: {quantity} | {weight} kg | {price}đ
         </Text>
         <Ionicons name="chevron-forward" size={18} color="#C4C4C4" />
       </View>

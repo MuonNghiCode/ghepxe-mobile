@@ -89,12 +89,18 @@ export interface ShipRequestItemData {
     weight: number;
     description: string | null;
     imageFileId: string | null;
+    imageUrl: string | null; // Thêm imageUrl
     size: string;
 }
 
 export interface ShipRequestResponseData {
     shipRequestId: string;
     userId: string;
+    driverId: string | null; // Thêm thông tin driver
+    driverName: string | null;
+    driverAvatarUrl: string | null;
+    driverRating: number | null;
+    driverPhone: string | null;
     pickupAddress: string;
     pickupLatitude: number;
     pickupLongitude: number;
@@ -104,10 +110,9 @@ export interface ShipRequestResponseData {
     pickupWindowStart: string;
     pickupWindowEnd: string;
     items: ShipRequestItemData[];
-    itemType: string;
-    status: string;
     shipType: string;
     itemCategory: string;
+    itemType: string;
     specialRequest?: {
         returnDelivery: boolean;
         loading: boolean;
@@ -115,6 +120,8 @@ export interface ShipRequestResponseData {
         smsNotification: boolean;
         electronicInvoice: boolean;
     };
+    routePolyline: string | null; // Thêm routePolyline
+    status: string;
 }
 
 export interface ShipRequestDetailResponseData {
@@ -123,15 +130,13 @@ export interface ShipRequestDetailResponseData {
     amount: number;
     weight: number;
     description: string | null;
-    imageLink: string | null;
+    imageFileId: string | null;
+    imageUrl: string | null;
     size: string;
-    type: string;
 }
 
-// Thay đổi response để trả về string thay vì object
+// Type aliases
 export type CreateShipRequestResponse = ApiResponse<string>;
-
-// Type aliases sử dụng ApiResponse chung
 export type LoginResponse = ApiResponse<LoginResponseData>;
 export type RegisterResponse = ApiResponse<RegisterResponseData>;
 export type ProfileResponse = ApiResponse<ProfileResponseData>;
