@@ -23,6 +23,7 @@ import {
   UserOrderDetailScreenParams,
 } from "src/types/order.interface";
 import { ShipRequestResponseData } from "src/types";
+import { getImageUrlFromFileId } from "src/utils/fileHelper";
 
 type UserOrderDetailScreenRouteProp = RouteProp<
   { params: UserOrderDetailScreenParams },
@@ -196,12 +197,33 @@ export default function UserOrderDetailScreen() {
     route.params?.orderData || null
   );
 
+  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+  const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>(
+    {}
+  );
+
   const shipRequestId = route.params?.shipRequestId || route.params?.id;
 
   useEffect(() => {
     console.log("Route params:", route.params);
     console.log("Order data:", orderData);
   }, [route.params, orderData]);
+
+  useEffect(() => {
+    if (orderData?.items) {
+      orderData.items.forEach((item) => {
+        if (item.imageFileId && !item.imageUrl) {
+          setLoadingImages((prev) => ({ ...prev, [item.itemId]: true }));
+          getImageUrlFromFileId(item.imageFileId).then((url) => {
+            if (url) {
+              setImageUrls((prev) => ({ ...prev, [item.itemId]: url }));
+            }
+            setLoadingImages((prev) => ({ ...prev, [item.itemId]: false }));
+          });
+        }
+      });
+    }
+  }, [orderData]);
 
   const getOrderStatus = (): OrderStatus => {
     return (route.params?.orderStatus as OrderStatus) || "waiting";
@@ -553,73 +575,86 @@ export default function UserOrderDetailScreen() {
         </View>
 
         {/* Danh sách kiện hàng */}
-        {orderData.items.map((item, idx) => (
-          <View
-            key={item.itemId}
-            style={tw`py-3 ${
-              idx < orderData.items.length - 1 ? "border-b border-gray-100" : ""
-            }`}
-          >
-            <View style={tw`flex-row items-start`}>
-              {/* Image */}
-              {item.imageUrl ? (
-                <Image
-                  source={{ uri: item.imageUrl }}
-                  style={tw`w-16 h-16 rounded-lg mr-3`}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View
-                  style={tw`w-16 h-16 rounded-lg bg-gray-200 mr-3 items-center justify-center`}
-                >
-                  <Ionicons name="cube-outline" size={32} color="#9CA3AF" />
-                </View>
-              )}
+        {orderData.items.map((item, idx) => {
+          const imageUrl = item.imageUrl || imageUrls[item.itemId];
+          const isLoadingImage = loadingImages[item.itemId];
 
-              {/* Item info */}
-              <View style={tw`flex-1`}>
-                <Text
-                  style={tw`text-sm font-semibold text-black`}
-                  numberOfLines={2}
-                >
-                  {item.name}
-                </Text>
-
-                {item.description && (
-                  <Text
-                    style={tw`text-xs text-gray-500 mt-1`}
-                    numberOfLines={2}
+          return (
+            <View
+              key={item.itemId}
+              style={tw`py-3 ${
+                idx < orderData.items.length - 1
+                  ? "border-b border-gray-100"
+                  : ""
+              }`}
+            >
+              <View style={tw`flex-row items-start`}>
+                {/* Image */}
+                {isLoadingImage ? (
+                  <View
+                    style={tw`w-16 h-16 rounded-lg bg-gray-200 mr-3 items-center justify-center`}
                   >
-                    {item.description}
-                  </Text>
+                    <ActivityIndicator size="small" color="#00A982" />
+                  </View>
+                ) : imageUrl ? (
+                  <Image
+                    source={{ uri: imageUrl }}
+                    style={tw`w-16 h-16 rounded-lg mr-3`}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View
+                    style={tw`w-16 h-16 rounded-lg bg-gray-200 mr-3 items-center justify-center`}
+                  >
+                    <Ionicons name="cube-outline" size={32} color="#9CA3AF" />
+                  </View>
                 )}
 
-                <View style={tw`flex-row items-center mt-2 flex-wrap`}>
-                  <View style={tw`flex-row items-center mr-3`}>
-                    <Text style={tw`text-xs text-gray-500`}>SL: </Text>
-                    <Text style={tw`text-xs text-black font-semibold`}>
-                      {item.amount}
-                    </Text>
-                  </View>
+                {/* Item info */}
+                <View style={tw`flex-1`}>
+                  <Text
+                    style={tw`text-sm font-semibold text-black`}
+                    numberOfLines={2}
+                  >
+                    {item.name}
+                  </Text>
 
-                  <View style={tw`bg-[#E6F7F3] rounded-full px-2 py-1 mr-2`}>
-                    <Text style={tw`text-xs text-[#00A982] font-semibold`}>
-                      {item.weight}kg
+                  {item.description && (
+                    <Text
+                      style={tw`text-xs text-gray-500 mt-1`}
+                      numberOfLines={2}
+                    >
+                      {item.description}
                     </Text>
-                  </View>
+                  )}
 
-                  {item.size && (
-                    <View style={tw`bg-blue-100 rounded-full px-2 py-1`}>
-                      <Text style={tw`text-xs text-blue-600 font-semibold`}>
-                        {item.size}
+                  <View style={tw`flex-row items-center mt-2 flex-wrap`}>
+                    <View style={tw`flex-row items-center mr-3`}>
+                      <Text style={tw`text-xs text-gray-500`}>SL: </Text>
+                      <Text style={tw`text-xs text-black font-semibold`}>
+                        {item.amount}
                       </Text>
                     </View>
-                  )}
+
+                    <View style={tw`bg-[#E6F7F3] rounded-full px-2 py-1 mr-2`}>
+                      <Text style={tw`text-xs text-[#00A982] font-semibold`}>
+                        {item.weight}kg
+                      </Text>
+                    </View>
+
+                    {item.size && (
+                      <View style={tw`bg-blue-100 rounded-full px-2 py-1`}>
+                        <Text style={tw`text-xs text-blue-600 font-semibold`}>
+                          {item.size}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
               </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
 
         {/* Yêu cầu đặc biệt */}
         {renderSpecialRequestSection()}

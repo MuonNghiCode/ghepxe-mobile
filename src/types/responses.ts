@@ -135,7 +135,27 @@ export interface ShipRequestDetailResponseData {
     size: string;
 }
 
+export interface UploadFileResponseData {
+  fileId: string;
+  fileUrl: string;
+  fileName: string;
+  fileSize: number;
+  contentType: string;
+  uploadedAt: string;
+}
+
+export interface GetFileResponseData {
+  presignedUrl: string;
+  fileName: string;
+  contentType: string;
+  fileSize: number;
+  expiresAt: string;
+  downloadMethod: string;
+  fileExtension: string;
+}
+
 // Type aliases
+export type UploadFileResponse = ApiResponse<UploadFileResponseData>;
 export type CreateShipRequestResponse = ApiResponse<string>;
 export type LoginResponse = ApiResponse<LoginResponseData>;
 export type RegisterResponse = ApiResponse<RegisterResponseData>;
@@ -145,4 +165,5 @@ export type GetShipRequestsResponse = ApiResponse<ShipRequestResponseData[]>;
 export type GetShipRequestResponse = ApiResponse<ShipRequestResponseData>;
 export type GetShipRequestDetailResponse = ApiResponse<ShipRequestDetailResponseData[]>;
 export type BaseResponse = ResponseModel<null>;
+export type GetFileResponse = ApiResponse<GetFileResponseData>;
 

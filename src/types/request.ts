@@ -51,3 +51,17 @@ export interface CreateShipRequestRequest {
     itemCategory: string; // Loại hàng hóa: "Business" hoặc "Personal"
     specialRequest?: SpecialRequestData;
 }
+
+export interface UploadFileRequest {
+    file: {
+        uri: string;      // Đường dẫn file local
+        name: string;     // Tên file
+        type: string;     // Loại file, ví dụ: "image/png"
+    };
+}
+
+export interface GetFileRequest {
+  fileId: string;
+  expirationMinutes?: number; // mặc định 2880 nếu không truyền
+}
+

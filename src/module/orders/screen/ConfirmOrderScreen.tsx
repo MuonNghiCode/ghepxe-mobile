@@ -6,6 +6,7 @@ import {
   ScrollView,
   TextInput,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import tw from "twrnc";
 import {
@@ -41,6 +42,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import CategorySelectOverlay from "../components/CategorySelectOverlay";
 import { Product } from "src/types/product.interface";
+import { useFile } from "src/hooks/useFile";
 
 // Cập nhật interface cho special requests
 const specialRequests = [
@@ -134,7 +136,10 @@ export default function ConfirmOrderScreen() {
   const { user } = useAuth();
   const { createShipRequest, loading: creatingOrder } = useShipRequest();
   const { toast, showSuccess, showError, showWarning, hideToast } = useToast();
-
+  const { uploadFile, getFile, loading: fileLoading } = useFile();
+  const [uploadingProductId, setUploadingProductId] = useState<string | null>(
+    null
+  );
   // State cho confirm dialog
   const [showSwapConfirm, setShowSwapConfirm] = useState(false);
   const [showCreateConfirm, setShowCreateConfirm] = useState(false);
@@ -378,7 +383,11 @@ export default function ConfirmOrderScreen() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        handleUpdateProduct(productId, "imageUri", result.assets[0].uri);
+        const localUri = result.assets[0].uri;
+        // Cập nhật imageUri local trước
+        handleUpdateProduct(productId, "imageUri", localUri);
+        // Upload lên server
+        await handleUploadProductImage(productId, localUri);
       }
     } catch (error) {
       showError("Không thể chọn ảnh");
@@ -401,10 +410,68 @@ export default function ConfirmOrderScreen() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        handleUpdateProduct(productId, "imageUri", result.assets[0].uri);
+        const localUri = result.assets[0].uri;
+        // Cập nhật imageUri local trước
+        handleUpdateProduct(productId, "imageUri", localUri);
+        // Upload lên server
+        await handleUploadProductImage(productId, localUri);
       }
     } catch (error) {
       showError("Không thể chụp ảnh");
+    }
+  };
+
+  // Hàm upload ảnh lên server
+  const handleUploadProductImage = async (
+    productId: string,
+    localUri: string
+  ) => {
+    setUploadingProductId(productId);
+
+    try {
+      const fileName = localUri.split("/").pop() || "image.jpg";
+      const fileType = fileName.endsWith(".png") ? "image/png" : "image/jpeg";
+
+      console.log("📤 Uploading file:", {
+        uri: localUri,
+        name: fileName,
+        type: fileType,
+      });
+
+      const response = await uploadFile({
+        file: {
+          uri: localUri,
+          name: fileName,
+          type: fileType,
+        },
+      });
+
+      console.log("📥 Upload response:", JSON.stringify(response, null, 2));
+
+      if (response?.isSuccess && response.value?.fileId) {
+        // Lưu fileId và fileUrl vào product
+        setProducts((prevProducts) =>
+          prevProducts.map((p) =>
+            p.id === productId
+              ? {
+                  ...p,
+                  imageFileId: response.value.fileId,
+                  imageUrl: response.value.fileUrl,
+                }
+              : p
+          )
+        );
+        console.log("✅ Saved fileId:", response.value.fileId);
+        showSuccess("Upload ảnh thành công!");
+      } else {
+        console.error("❌ Upload failed:", response?.error);
+        showError(response?.error?.description || "Upload ảnh thất bại");
+      }
+    } catch (error: any) {
+      console.error("❌ Upload exception:", error);
+      showError(error?.message || "Có lỗi xảy ra khi upload ảnh");
+    } finally {
+      setUploadingProductId(null);
     }
   };
 
@@ -413,16 +480,6 @@ export default function ConfirmOrderScreen() {
     setShowCreateConfirm(false);
 
     try {
-      // Validate products
-      const invalidProducts = products.filter(
-        (p) => !p.name.trim() || !p.weight || parseFloat(p.weight) <= 0
-      );
-
-      if (invalidProducts.length > 0) {
-        showError("Vui lòng nhập đầy đủ thông tin cho tất cả sản phẩm");
-        return;
-      }
-
       // Map products thành items
       const items = products.map((product) => {
         const item: any = {
@@ -430,8 +487,21 @@ export default function ConfirmOrderScreen() {
           amount: 1,
           weight: parseFloat(product.weight),
           size: product.size,
-          imageFileId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         };
+
+        // ✅ Ưu tiên dùng imageFileId nếu có
+        if (product.imageFileId) {
+          item.imageFileId = product.imageFileId;
+          console.log(
+            `✅ Product "${product.name}" has fileId:`,
+            product.imageFileId
+          );
+        } else {
+          console.warn(
+            `⚠️ Product "${product.name}" không có fileId, dùng default`
+          );
+          item.imageFileId = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
+        }
 
         if (values.driverNote) {
           item.description = values.driverNote;
@@ -439,6 +509,8 @@ export default function ConfirmOrderScreen() {
 
         return item;
       });
+
+      console.log("📦 Items to send:", JSON.stringify(items, null, 2));
 
       const now = new Date();
       const pickupTimeWindow = {
@@ -487,7 +559,7 @@ export default function ConfirmOrderScreen() {
         showError(errorMsg);
       }
     } catch (error: any) {
-      console.error("Create order exception:", error);
+      console.error("❌ Create order exception:", error);
       showError(error.message || "Có lỗi xảy ra");
     }
   };
@@ -852,11 +924,46 @@ export default function ConfirmOrderScreen() {
                             style={tw`w-full h-40 rounded-lg`}
                             resizeMode="cover"
                           />
+                          {/* Hiển thị loading khi đang upload */}
+                          {uploadingProductId === product.id && (
+                            <View
+                              style={tw`absolute inset-0 bg-black/50 rounded-lg items-center justify-center`}
+                            >
+                              <ActivityIndicator size="large" color="#00A982" />
+                              <Text style={tw`text-white text-xs mt-2`}>
+                                Đang tải lên...
+                              </Text>
+                            </View>
+                          )}
+                          {/* Hiển thị icon success nếu đã upload */}
+                          {product.imageFileId &&
+                            uploadingProductId !== product.id && (
+                              <View
+                                style={tw`absolute top-2 left-2 bg-green-500 rounded-full p-1`}
+                              >
+                                <Ionicons
+                                  name="checkmark"
+                                  size={16}
+                                  color="white"
+                                />
+                              </View>
+                            )}
                           <TouchableOpacity
                             style={tw`absolute top-2 right-2 bg-white rounded-full p-1`}
-                            onPress={() =>
-                              handleUpdateProduct(product.id, "imageUri", "")
-                            }
+                            onPress={() => {
+                              setProducts(
+                                products.map((p) =>
+                                  p.id === product.id
+                                    ? {
+                                        ...p,
+                                        imageUri: undefined,
+                                        imageFileId: undefined,
+                                        imageUrl: undefined,
+                                      }
+                                    : p
+                                )
+                              );
+                            }}
                           >
                             <Ionicons name="close" size={20} color="#FF4D4F" />
                           </TouchableOpacity>

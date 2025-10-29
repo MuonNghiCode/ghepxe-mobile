@@ -239,16 +239,14 @@ export default function UserOrderScreen() {
             <UserOrderCard
               key={shipRequest.shipRequestId}
               status={getOrderStatus(shipRequest)}
-              productImage={firstItem?.imageUrl || ""}
+              productImage={firstItem?.imageUrl ?? undefined}
+              productImageFileId={firstItem?.imageFileId ?? undefined} // Thêm fileId
               productName={firstItem?.name || "Không có tên"}
               quantity={shipRequest.items?.length || 0}
               weight={totalWeight.toString()}
-              // Format currency cho giá
               price={Number(55000).toLocaleString("vi-VN")}
               pickupAddress={shipRequest.pickupAddress || "Không có địa chỉ"}
               deliveryAddress={shipRequest.dropoffAddress || "Không có địa chỉ"}
-              // Không truyền headerText để dùng config.header mặc định
-              // headerText={...} <-- XÓA DÒNG NÀY
               showMore={(shipRequest.items?.length || 0) > 1}
               onReview={() => {}}
               onPress={() => handleCardPress(shipRequest)}
