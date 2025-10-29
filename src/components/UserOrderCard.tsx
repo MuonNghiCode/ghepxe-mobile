@@ -1,10 +1,18 @@
-import React from "react";
-import { View, Text, TouchableOpacity, Image } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+} from "react-native";
 import tw from "twrnc";
 import { Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { getImageUrlFromFileId } from "src/utils/fileHelper";
 
 type OrderCardProps = {
-  productImage: any;
+  productImage?: string; // URL trực tiếp
+  productImageFileId?: string; // FileId để lấy URL
   productName: string;
   quantity: number;
   weight: string;
@@ -56,6 +64,7 @@ const STATUS_CONFIG = {
 
 export default function UserOrderCard({
   productImage,
+  productImageFileId,
   productName,
   quantity,
   weight,
@@ -70,6 +79,26 @@ export default function UserOrderCard({
   onPress,
 }: OrderCardProps) {
   const config = STATUS_CONFIG[status];
+  const [imageUrl, setImageUrl] = useState<string | null>(productImage || null);
+  const [loadingImage, setLoadingImage] = useState(false);
+
+  useEffect(() => {
+    // Nếu có productImage trực tiếp thì dùng luôn
+    if (productImage) {
+      setImageUrl(productImage);
+      return;
+    }
+
+    // Nếu có fileId thì lấy presigned URL
+    if (productImageFileId) {
+      setLoadingImage(true);
+      getImageUrlFromFileId(productImageFileId)
+        .then((url) => {
+          if (url) setImageUrl(url);
+        })
+        .finally(() => setLoadingImage(false));
+    }
+  }, [productImage, productImageFileId]);
 
   return (
     <TouchableOpacity
@@ -127,11 +156,25 @@ export default function UserOrderCard({
 
       {/* Sản phẩm */}
       <View style={tw`flex-row items-center px-4 pt-3 pb-2`}>
-        <Image
-          source={productImage}
-          style={tw`w-12 h-12 rounded mr-3`}
-          resizeMode="cover"
-        />
+        {loadingImage ? (
+          <View
+            style={tw`w-12 h-12 rounded mr-3 bg-gray-200 items-center justify-center`}
+          >
+            <ActivityIndicator size="small" color="#00A982" />
+          </View>
+        ) : imageUrl ? (
+          <Image
+            source={{ uri: imageUrl }}
+            style={tw`w-12 h-12 rounded mr-3`}
+            resizeMode="cover"
+          />
+        ) : (
+          <View
+            style={tw`w-12 h-12 rounded mr-3 bg-gray-200 items-center justify-center`}
+          >
+            <Ionicons name="image-outline" size={24} color="#9CA3AF" />
+          </View>
+        )}
         <View style={tw`flex-1`}>
           <Text
             style={tw`font-semibold text-black text-base`}
@@ -190,7 +233,7 @@ export default function UserOrderCard({
         style={tw`flex-row items-center justify-between px-4 py-2 border-t border-gray-100`}
       >
         <Text style={tw`text-xs text-gray-500`}>
-          Số lượng: {quantity} | {weight} | {price}
+          Số lượng: {quantity} | {weight} kg | {price}đ
         </Text>
         <Ionicons name="chevron-forward" size={18} color="#C4C4C4" />
       </View>

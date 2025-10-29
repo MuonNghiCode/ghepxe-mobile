@@ -1,3 +1,5 @@
+import { ShipRequestResponseData } from './responses';
+
 export type OrderStatus = "waiting" | "delivering" | "delivered" | "cancelled";
 
 export type OrderCardStatus = "pending" | "picking" | "review" | "cancelled";
@@ -54,7 +56,21 @@ export interface OrderItem {
 
 // Navigation types
 export interface UserOrderDetailScreenParams {
-  order: Order;
+  id?: string;
+  shipRequestId?: string;
+  orderData?: ShipRequestResponseData; // Thêm này
+  order?: Order;
+  orderStatus?: OrderStatus;
+  productImage?: string;
+  productName?: string;
+  quantity?: number;
+  weight?: number;
+  price?: number | string;
+  pickupAddress?: string;
+  deliveryAddress?: string;
+  time?: string;
+  tag?: string;
+  status?: OrderCardStatus;
 }
 
 export interface Coordinate {

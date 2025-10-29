@@ -15,12 +15,17 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "src/navigation/type";
 import { LOCATIONIQ_API_KEY } from "@env";
 import { useCurrentLocation } from "src/hooks/useCurrentLocation";
+import { useOrder } from "src/context/OrderContext";
+import { useToast } from "src/hooks/useToast";
+import Toast from "src/components/Toast";
+import * as Location from "expo-location";
 import {
   AddressItemProps,
   AddressItemType,
   HelpItemProps,
   HelpItemType,
 } from "src/types/address.interface,";
+import { useFocusEffect } from "@react-navigation/native";
 
 type BillingAddressNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -125,7 +130,59 @@ export default function BillingAddressScreen() {
     loading,
     error,
     refresh,
+    coordinates,
   } = useCurrentLocation();
+
+  const { setPickupLocation } = useOrder();
+  const { toast, showSuccess, showError, showWarning, hideToast } = useToast();
+
+  // Parse địa chỉ từ LocationIQ format
+  const parseLocationIQAddress = (item: any) => {
+    return {
+      street: item.address?.road || item.address?.name || "",
+      ward: item.address?.suburb || item.address?.neighbourhood || "",
+      district: item.address?.city_district || item.address?.county || "",
+      city:
+        item.address?.city || item.address?.town || item.address?.village || "",
+      province: item.address?.state || "",
+      postalCode: item.address?.postcode || "700000",
+      country: item.address?.country || "Việt Nam",
+      latitude: parseFloat(item.lat) || 0,
+      longitude: parseFloat(item.lon) || 0,
+      fullAddress: item.display_name || "",
+    };
+  };
+
+  // Parse địa chỉ từ reverse geocoding
+  const parseReverseGeocode = async (lat: number, lon: number) => {
+    try {
+      const addressArr = await Location.reverseGeocodeAsync({
+        latitude: lat,
+        longitude: lon,
+      });
+
+      if (addressArr && addressArr.length > 0) {
+        const addr = addressArr[0];
+        return {
+          street: addr.street || addr.name || "",
+          ward: addr.subregion || "",
+          district: addr.district || addr.city || "",
+          city: addr.city || "",
+          province: addr.region || addr.city || "",
+          postalCode: addr.postalCode || "700000",
+          country: addr.country || "Việt Nam",
+          latitude: lat,
+          longitude: lon,
+          fullAddress: `${addr.name || ""} ${addr.street || ""}, ${
+            addr.city || ""
+          }, ${addr.country || ""}`.trim(),
+        };
+      }
+    } catch (error) {
+      console.error("Reverse geocode error:", error);
+    }
+    return null;
+  };
 
   // Fetch address suggestions from LocationIQ API
   const fetchAddressSuggestions = useCallback(async (input: string) => {
@@ -166,33 +223,100 @@ export default function BillingAddressScreen() {
         | undefined;
       if (params?.mapLocation) {
         setMapLocation(params.mapLocation);
+        // Xử lý location từ map và chuyển sang ConfirmOrder ngay
+        handleMapLocationSelect(params.mapLocation);
       }
     }
   }, [navigation]);
 
-  // Event handlers
-  const handleGoBack = useCallback(() => {
-    navigation.goBack();
-  }, [navigation]);
+  // Lắng nghe khi màn hình được focus lại từ MapSelect
+  useFocusEffect(
+    useCallback(() => {
+      const state = navigation.getState();
+      const currentRoute = state.routes[state.index];
+      const params = currentRoute.params as { mapLocation?: any } | undefined;
 
-  const handleCurrentLocation = useCallback(() => {
-    navigation.navigate("ConfirmOrder" as never);
-  }, [navigation]);
+      if (params?.mapLocation) {
+        console.log("Received mapLocation:", params.mapLocation);
+        handleMapLocationSelect(params.mapLocation);
+
+        // Clear params sau khi xử lý để tránh trigger lại
+        navigation.setParams({ mapLocation: undefined } as any);
+      }
+    }, [navigation])
+  );
+
+  const handleMapLocationSelect = async (mapLoc: any) => {
+    console.log("Processing mapLocation:", mapLoc);
+
+    if (!mapLoc?.coords) {
+      console.log("No coords found");
+      return;
+    }
+
+    const { latitude, longitude } = mapLoc.coords;
+    console.log("Coordinates:", latitude, longitude);
+
+    const parsed = await parseReverseGeocode(latitude, longitude);
+    console.log("Parsed address:", parsed);
+
+    if (parsed) {
+      setPickupLocation(parsed);
+      console.log("Navigating to ConfirmOrder");
+      navigation.navigate("ConfirmOrder" as never);
+    } else {
+      console.log("Failed to parse address");
+    }
+  };
+
+  const handleCurrentLocation = useCallback(async () => {
+    if (!coordinates) {
+      refresh();
+      return;
+    }
+
+    const parsed = await parseReverseGeocode(
+      coordinates.latitude,
+      coordinates.longitude
+    );
+    if (parsed) {
+      setPickupLocation(parsed);
+      navigation.navigate("ConfirmOrder" as never);
+    }
+  }, [coordinates, navigation, setPickupLocation, refresh]);
 
   const handleAddNew = useCallback(() => {
-    console.log("Add new address...");
-  }, []);
+    navigation.navigate("OrderBillingAddress" as never);
+  }, [navigation]);
 
   const handleViewAll = useCallback(() => {
     console.log("View all addresses...");
   }, []);
 
+  const handleGoBack = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
+
   const handleAddressSelect = useCallback(
-    (address: any) => {
-      console.log("Selected address:", address);
-      navigation.goBack();
+    async (address: AddressItemType) => {
+      try {
+        const fullAddress = `${address.title}, ${address.subtitle}`;
+        const geocodeResult = await Location.geocodeAsync(fullAddress);
+
+        if (geocodeResult && geocodeResult.length > 0) {
+          const { latitude, longitude } = geocodeResult[0];
+          const parsed = await parseReverseGeocode(latitude, longitude);
+
+          if (parsed) {
+            setPickupLocation(parsed);
+            navigation.navigate("ConfirmOrder" as never);
+          }
+        }
+      } catch (error) {
+        console.error("Error selecting address:", error);
+      }
     },
-    [navigation]
+    [navigation, setPickupLocation]
   );
 
   const handleAddressMenu = useCallback((address: any) => {
@@ -204,7 +328,7 @@ export default function BillingAddressScreen() {
   }, []);
 
   const handleMapSelection = useCallback(() => {
-    navigation.navigate("MapSelect", { returnScreen: "Billing" });
+    navigation.navigate("MapSelect", { returnScreen: "Billing" } as never);
   }, [navigation]);
 
   const handleSearchTextChange = useCallback(
@@ -224,11 +348,17 @@ export default function BillingAddressScreen() {
     [debounceTimer, fetchAddressSuggestions]
   );
 
-  const handleSuggestionSelect = useCallback((item: any) => {
-    setSearchText(item.display_name);
-    setShowDropdown(false);
-    console.log("Selected suggestion:", item);
-  }, []);
+  const handleSuggestionSelect = useCallback(
+    (item: any) => {
+      setSearchText(item.display_name);
+      setShowDropdown(false);
+
+      const parsed = parseLocationIQAddress(item);
+      setPickupLocation(parsed);
+      navigation.navigate("ConfirmOrder" as never);
+    },
+    [navigation, setPickupLocation]
+  );
 
   const handleSearchFocus = useCallback(() => {
     setSearchFocused(true);
@@ -512,6 +642,14 @@ export default function BillingAddressScreen() {
         </ScrollView>
       </View>
       {renderBottomButton()}
+
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+        position="top"
+      />
     </SafeAreaView>
   );
 }
