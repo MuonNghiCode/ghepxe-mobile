@@ -451,7 +451,7 @@ export default function ConfirmOrderScreen() {
       // itemCategory = loại hàng hóa (goodsType: "Business" hoặc "Personal")
       const itemType = orderCategory; // "Thời trang", "Điện tử", etc.
       const itemCategory =
-        values.goodsType === "private" ? "Business" : "Personal";
+        values.goodsType === "private" ? "Bussiness" : "Personal";
 
       const shipRequest = buildShipRequest(
         user.userId,
