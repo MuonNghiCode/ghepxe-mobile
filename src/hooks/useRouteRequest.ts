@@ -4,7 +4,9 @@ import {
   CreateRouteRequestResponse,
   RouteRequestResponseData,
   ApiResponse,
+  AssignShipRequestToRouteRequest,
 } from "src/types";
+import { AssignShipRequestResponse } from "src/types/responses";
 import { routeRequestService } from "src/service/routeRequestService";
 
 export function useRouteRequest() {
@@ -47,6 +49,26 @@ export function useRouteRequest() {
     }
   };
 
+  // Gán đơn hàng vào chuyến xe
+  const assignShipRequestToRoute = async (
+    routeRequestId: string,
+    shipRequestId: string
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data: AssignShipRequestToRouteRequest = { shipRequestId };
+      const response: AssignShipRequestResponse =
+        await routeRequestService.assignShipRequestToRoute(routeRequestId, data);
+      return response;
+    } catch (err: any) {
+      setError(err?.message || "Gán đơn hàng thất bại");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     error,
@@ -54,5 +76,6 @@ export function useRouteRequest() {
     createResult,
     createRouteRequest,
     getAllRouteRequests,
+    assignShipRequestToRoute,
   };
 }

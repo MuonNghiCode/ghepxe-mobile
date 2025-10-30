@@ -9,6 +9,9 @@ import { useRouteRequest } from "src/hooks/useRouteRequest";
 import { useAuth } from "src/context/AuthContext";
 import { useMatchingService } from "src/hooks/useMatchingService";
 import dayjs from "dayjs";
+import Toast from "src/components/Toast";
+import { useToast } from "src/hooks/useToast";
+import SkeletonList from "../../components/SkeletonList";
 
 type TabType = "order" | "trip";
 
@@ -17,7 +20,12 @@ export default function DriverTripScreen() {
   const [tab, setTab] = useState<TabType>("order");
 
   // Hook lấy route requests từ backend
-  const { routeRequests, getAllRouteRequests, loading } = useRouteRequest();
+  const {
+    routeRequests,
+    getAllRouteRequests,
+    loading,
+    assignShipRequestToRoute,
+  } = useRouteRequest();
   const { user } = useAuth();
 
   // Hook lấy đơn hàng matching từ backend
@@ -26,6 +34,8 @@ export default function DriverTripScreen() {
     getShipRequestMatching,
     loading: matchingLoading,
   } = useMatchingService();
+
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
   useEffect(() => {
     getAllRouteRequests();
@@ -44,9 +54,32 @@ export default function DriverTripScreen() {
     navigation.navigate("CreateDriverRoute" as never);
   }, [navigation]);
 
-  const handleAcceptOrder = useCallback(() => {
-    // xử lý nhận đơn
-  }, []);
+  // Chức năng nhận đơn (assign)
+  const handleAcceptOrder = useCallback(
+    async (shipRequestId: string) => {
+      const routeRequestId = routeRequests[0]?.routeRequestId;
+      if (!routeRequestId) return;
+      const response = await assignShipRequestToRoute(
+        routeRequestId,
+        shipRequestId
+      );
+      if (response?.isSuccess) {
+        showSuccess("Nhận đơn thành công!");
+        await getAllRouteRequests();
+        getShipRequestMatching({ routeRequestId }); // reload đơn ghép
+      } else {
+        showError("Nhận đơn thất bại, vui lòng thử lại!");
+      }
+    },
+    [
+      routeRequests,
+      assignShipRequestToRoute,
+      getAllRouteRequests,
+      getShipRequestMatching,
+      showSuccess,
+      showError,
+    ]
+  );
 
   const handleContactCustomer = useCallback(() => {
     // xử lý liên hệ
@@ -183,7 +216,7 @@ export default function DriverTripScreen() {
   const mapStatus = (status?: string) => {
     if (!status) return "CHỜ XÁC NHẬN";
     if (status === "Pending") return "CHỜ XÁC NHẬN";
-    if (status === "picking") return "ĐANG GIAO";
+    if (status === "Matched") return "ĐÃ NHẬN";
     if (status === "delivered") return "ĐÃ GIAO";
     if (status === "cancelled") return "ĐÃ HỦY";
     return status;
@@ -216,7 +249,7 @@ export default function DriverTripScreen() {
             serviceType: "shared",
           }}
           variant="suggestion"
-          onAccept={handleAcceptOrder}
+          onAccept={() => handleAcceptOrder(order.shipRequestId)}
           onContact={handleContactCustomer}
         />
       ))}
@@ -259,8 +292,8 @@ export default function DriverTripScreen() {
     <>
       {renderSectionTitle("Đơn hàng ghép", matchedRequests.length)}
       {matchingLoading ? (
-        <View style={tw`items-center justify-center py-8`}>
-          <Text style={tw`text-gray-500`}>Đang tải đơn hàng ghép...</Text>
+        <View style={tw`px-4`}>
+          <SkeletonList count={3} />
         </View>
       ) : matchedRequests.length === 0 ? (
         renderEmptyState(
@@ -271,6 +304,7 @@ export default function DriverTripScreen() {
       ) : (
         renderOrdersList()
       )}
+      <Toast {...toast} visible={toast.visible} onHide={hideToast} />
     </>
   );
 
@@ -278,8 +312,8 @@ export default function DriverTripScreen() {
     <>
       {renderSectionTitle("Chuyến xe đã tạo", routeRequests.length)}
       {loading ? (
-        <View style={tw`items-center justify-center py-8`}>
-          <Text style={tw`text-gray-500`}>Đang tải chuyến xe...</Text>
+        <View style={tw`px-4`}>
+          <SkeletonList count={2} />
         </View>
       ) : routeRequests.length === 0 ? (
         renderEmptyState(
@@ -290,6 +324,7 @@ export default function DriverTripScreen() {
       ) : (
         renderRoutesList()
       )}
+      <Toast {...toast} visible={toast.visible} onHide={hideToast} />
     </>
   );
 

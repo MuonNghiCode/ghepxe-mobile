@@ -254,6 +254,16 @@ export interface DriverMatchingShipResponseData {
   reason: string;
 }
 
+export interface AssignShipRequestResponse {
+  isSuccess: boolean;
+  isFailure: boolean;
+  error: {
+    code: string;
+    description: string;
+  };
+}
+
+
 // Type aliases
 export type GetRouteRequestResponse = ApiResponse<RouteRequestResponseData>;
 export type CreateRouteRequestResponse = ApiResponse<CreateRouteRequestResponseData>;

@@ -107,3 +107,7 @@ export interface CreateVehicleRequest {
 export interface DriverMatchingRequest {
     routeRequestId: string;
 }
+
+export interface AssignShipRequestToRouteRequest {
+  shipRequestId: string;
+}
