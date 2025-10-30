@@ -67,6 +67,7 @@ export interface ProfileResponseData {
     email: string;
     phone: string;
     address: string;
+    avatarUrl: string | null;
     status: string;
     createdDate: string;
     modifiedDate: string;
@@ -154,7 +155,120 @@ export interface GetFileResponseData {
   fileExtension: string;
 }
 
+export interface CreateVehicleResponseData {
+    vehicleId: string;
+}
+
+export interface VehicleResponseData {
+    vehicleId: string;
+    licensePlate: string;
+    brand: string;
+    model: string;
+    year: number;
+    color: string;
+    vehicleType: string;
+    maxWeight: number;
+    maxVolume: number;
+    maxSeats: number;
+    status: string;
+}
+
+export interface CreateRouteRequestResponseData {
+    routeRequestId: string;
+}
+export interface RouteRequestResponseData {
+    routeRequestId: string;
+    driverId: string;
+    vehicleId: string;
+    pickupAddress: string;
+    dropoffAddress: string;
+    pickupLatitude: number;
+    pickupLongitude: number;
+    dropoffLatitude: number;
+    dropoffLongitude: number;
+     departureTime: string;
+    estimatedArrivalTime: string;
+    isFullLoad: boolean;
+    availableWeight: number;
+    availableVolume: number;
+    supportedCommodities: string;
+    cargoHandlingNotes: string;
+    temperatureControlled: boolean;
+    minTemperatureCelsius: number;
+    maxTemperatureCelsius: number;
+    estimatedRouteCost: number;
+    estimatedFuelCost: number;
+    additionalNotes: string;
+    routePolyline: string;
+    status: string;
+    createdDate: string;
+    modifiedDate: string;
+    vehicle: VehicleResponseData;
+    shipRequests: ShipRequestResponseData[];
+}
+export interface DriverMatchingItemData {
+  itemId: string;
+  itemName: string;
+  amount: number;
+  weight: number;
+  description: string | null;
+  imageFileId: string;
+  imageUrl: string | null;
+  size: string;
+  matchScore: number;
+  reason: string;
+}
+
+export interface DriverMatchingSpecialResponse {
+  returnDelivery: boolean;
+  loading: boolean;
+  driverAssistance: boolean;
+  smsNotification: boolean;
+  electronicInvoice: boolean;
+}
+
+export interface DriverMatchingShipResponseData {
+  shipRequestId: string;
+  userId: string;
+  driverId: string | null;
+  driverName: string | null;
+  driverAvatarUrl: string | null;
+  driverRating: number | null;
+  driverPhone: string | null;
+  pickupAddress: string;
+  pickupLatitude: number;
+  pickupLongitude: number;
+  dropoffAddress: string;
+  dropoffLatitude: number;
+  dropoffLongitude: number;
+  pickupWindowStart: string;
+  pickupWindowEnd: string;
+  shipType: string;
+  itemCategory: string;
+  itemType: string;
+  routePolyline: string | null;
+  status: string;
+  specialRequest: DriverMatchingSpecialResponse;
+  items: DriverMatchingItemData[];
+  matchScore: number;
+  reason: string;
+}
+
+export interface AssignShipRequestResponse {
+  isSuccess: boolean;
+  isFailure: boolean;
+  error: {
+    code: string;
+    description: string;
+  };
+}
+
+
 // Type aliases
+export type GetRouteRequestResponse = ApiResponse<RouteRequestResponseData>;
+export type CreateRouteRequestResponse = ApiResponse<CreateRouteRequestResponseData>;
+export type GetVehicleResponse = ApiResponse<VehicleResponseData>;
+export type CreateVehicleResponse = ApiResponse<CreateVehicleResponseData>;
 export type UploadFileResponse = ApiResponse<UploadFileResponseData>;
 export type CreateShipRequestResponse = ApiResponse<string>;
 export type LoginResponse = ApiResponse<LoginResponseData>;
@@ -166,4 +280,5 @@ export type GetShipRequestResponse = ApiResponse<ShipRequestResponseData>;
 export type GetShipRequestDetailResponse = ApiResponse<ShipRequestDetailResponseData[]>;
 export type BaseResponse = ResponseModel<null>;
 export type GetFileResponse = ApiResponse<GetFileResponseData>;
+export type MatchingDriverResponse = ApiResponse<DriverMatchingShipResponseData[]>;
 

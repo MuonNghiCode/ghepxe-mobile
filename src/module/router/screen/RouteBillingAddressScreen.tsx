@@ -13,6 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useCurrentLocation } from "src/hooks/useCurrentLocation";
 import * as Location from "expo-location";
 import AddressSuggestModal from "../components/AddressSuggestModal";
+import { useRoute } from "src/context/RouteContext";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MAP_HEIGHT = SCREEN_HEIGHT * 0.75;
@@ -39,6 +40,7 @@ export default function RouteBillingAddressScreen() {
   const [isMapFull, setIsMapFull] = useState(false);
 
   const navigation = useNavigation();
+  const { setPickupLocation } = useRoute();
 
   // Hook lấy vị trí hiện tại
   const {
@@ -90,6 +92,28 @@ export default function RouteBillingAddressScreen() {
   // Nút định vị lại vị trí hiện tại
   const handleMyLocation = () => {
     refresh();
+  };
+
+  const handleConfirmAddress = () => {
+    if (!selected || !address) {
+      alert("Vui lòng chọn địa chỉ!");
+      return;
+    }
+
+    setPickupLocation({
+      fullAddress: address,
+      street: address.split(",")[0] || "",
+      ward: "",
+      district: address.split(",")[1]?.trim() || "",
+      city: address.split(",")[2]?.trim() || "",
+      province: "",
+      postalCode: "",
+      country: address.split(",")[3]?.trim() || "Vietnam",
+      latitude: selected.latitude,
+      longitude: selected.longitude,
+    });
+
+    navigation.navigate("ConfirmRoute" as never);
   };
 
   // --- Render functions ---
@@ -228,6 +252,7 @@ export default function RouteBillingAddressScreen() {
       <TouchableOpacity
         style={tw`bg-[#00A982] rounded-xl py-4 items-center w-full shadow-lg`}
         activeOpacity={0.8}
+        onPress={handleConfirmAddress}
       >
         <Text style={tw`text-white text-lg font-bold`}>Xác nhận địa chỉ</Text>
       </TouchableOpacity>

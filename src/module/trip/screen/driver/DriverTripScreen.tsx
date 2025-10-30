@@ -1,39 +1,100 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
 import tw from "twrnc";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import suggestedOrders from "../../../../constants/suggestedOrder";
 import OrderStatusCard from "../../../../components/OrderStatusCard";
 import DriverRouteCard from "../../components/DriverRouterCard";
-import mockDriverRoutes from "src/constants/driver";
+import { useRouteRequest } from "src/hooks/useRouteRequest";
+import { useAuth } from "src/context/AuthContext";
+import { useMatchingService } from "src/hooks/useMatchingService";
+import dayjs from "dayjs";
+import Toast from "src/components/Toast";
+import { useToast } from "src/hooks/useToast";
+import SkeletonList from "../../components/SkeletonList";
 
 type TabType = "order" | "trip";
 
 export default function DriverTripScreen() {
   const navigation = useNavigation();
   const [tab, setTab] = useState<TabType>("order");
-  const [driverRoutes, setDriverRoutes] = useState(mockDriverRoutes);
 
-  const pendingOrders = suggestedOrders.filter(
-    (order) => order.status === "CHỜ XÁC NHẬN"
-  );
+  // Hook lấy route requests từ backend
+  const {
+    routeRequests,
+    getAllRouteRequests,
+    loading,
+    assignShipRequestToRoute,
+  } = useRouteRequest();
+  const { user } = useAuth();
+
+  // Hook lấy đơn hàng matching từ backend
+  const {
+    matchedRequests,
+    getShipRequestMatching,
+    loading: matchingLoading,
+  } = useMatchingService();
+
+  const { toast, showSuccess, showError, hideToast } = useToast();
+
+  useEffect(() => {
+    getAllRouteRequests();
+  }, []);
+
+  useEffect(() => {
+    // Khi chuyển sang tab "order" hoặc khi có chuyến xe đầu tiên
+    if (tab === "order" && routeRequests.length > 0) {
+      getShipRequestMatching({
+        routeRequestId: routeRequests[0].routeRequestId,
+      });
+    }
+  }, [tab, routeRequests]);
 
   const handleCreateRoute = useCallback(() => {
     navigation.navigate("CreateDriverRoute" as never);
   }, [navigation]);
 
-  const handleAcceptOrder = useCallback(() => {
-    // xử lý nhận đơn
-  }, []);
+  // Chức năng nhận đơn (assign)
+  const handleAcceptOrder = useCallback(
+    async (shipRequestId: string) => {
+      const routeRequestId = routeRequests[0]?.routeRequestId;
+      if (!routeRequestId) return;
+      const response = await assignShipRequestToRoute(
+        routeRequestId,
+        shipRequestId
+      );
+      if (response?.isSuccess) {
+        showSuccess("Nhận đơn thành công!");
+        await getAllRouteRequests();
+        getShipRequestMatching({ routeRequestId }); // reload đơn ghép
+      } else {
+        showError("Nhận đơn thất bại, vui lòng thử lại!");
+      }
+    },
+    [
+      routeRequests,
+      assignShipRequestToRoute,
+      getAllRouteRequests,
+      getShipRequestMatching,
+      showSuccess,
+      showError,
+    ]
+  );
 
   const handleContactCustomer = useCallback(() => {
     // xử lý liên hệ
   }, []);
 
-  const handleCancelRoute = useCallback((routeId: string) => {
-    setDriverRoutes((prev) => prev.filter((route) => route.id !== routeId));
-  }, []);
+  const handleCancelRoute = useCallback(
+    (routeId: string) => {
+      // Nếu muốn xóa khỏi backend thì gọi API, nếu chỉ muốn xóa khỏi UI thì filter lại
+      // Ví dụ: gọi API hủy chuyến, sau đó gọi getAllRouteRequests lại
+      // getAllRouteRequests();
+    },
+    [
+      /* getAllRouteRequests */
+    ]
+  );
 
   const renderHeader = () => (
     <View style={tw`bg-[#4CC9A6] py-2`}>
@@ -149,28 +210,79 @@ export default function DriverTripScreen() {
     </View>
   );
 
+  const formatTime = (isoString?: string) =>
+    isoString ? dayjs(isoString).format("DD/MM/YYYY HH:mm") : "";
+
+  const mapStatus = (status?: string) => {
+    if (!status) return "CHỜ XÁC NHẬN";
+    if (status === "Pending") return "CHỜ XÁC NHẬN";
+    if (status === "Matched") return "ĐÃ NHẬN";
+    if (status === "delivered") return "ĐÃ GIAO";
+    if (status === "cancelled") return "ĐÃ HỦY";
+    return status;
+  };
+
+  // Đơn hàng ghép từ AI matching
   const renderOrdersList = () => (
     <View style={tw`px-4`}>
-      {pendingOrders.map((order) => (
+      {matchedRequests.map((order) => (
         <OrderStatusCard
-          key={order.id}
-          order={order}
+          key={order.shipRequestId}
+          order={{
+            id: order.shipRequestId,
+            customerName: order.driverName || "Khách hàng",
+            rating: order.driverRating || 5,
+            requestTime: formatTime(order.pickupWindowStart),
+            pickup: {
+              address: order.pickupAddress,
+              details: order.itemType,
+            },
+            delivery: {
+              address: order.dropoffAddress,
+              distance: "",
+            },
+            price: order.items?.[0]?.weight
+              ? `₫${order.items[0].weight * 10000}`
+              : "₫0",
+            co2Reduction: order.matchScore ? `${order.matchScore}kg` : "12kg",
+            status: mapStatus(order.status),
+            serviceType: "shared",
+          }}
           variant="suggestion"
-          onAccept={handleAcceptOrder}
+          onAccept={() => handleAcceptOrder(order.shipRequestId)}
           onContact={handleContactCustomer}
         />
       ))}
     </View>
   );
 
+  // Sử dụng dữ liệu từ backend, map đúng field cho DriverRouteCard
   const renderRoutesList = () => (
     <View style={tw`px-4`}>
-      {driverRoutes.map((route) => (
+      {routeRequests.map((route) => (
         <DriverRouteCard
-          key={route.id}
-          route={route}
+          key={route.routeRequestId}
+          route={{
+            id: route.routeRequestId,
+            avatar: user?.avatarUrl || "https://i.imgur.com/1bX5QH6.png",
+            driverName:
+              user?.username ||
+              route.vehicle?.brand + " " + route.vehicle?.model,
+            rating: 5,
+            from: route.pickupAddress,
+            to: route.dropoffAddress,
+            vehicle: route.vehicle?.vehicleType || "",
+            goods: route.supportedCommodities,
+            size: route.availableVolume + " m³",
+            discount: Math.round(route.availableWeight / 10),
+            estimatedPrice: route.estimatedRouteCost
+              ? `₫${route.estimatedRouteCost.toLocaleString()}`
+              : "₫0",
+            distance: "",
+            duration: "",
+          }}
           variant="driver"
-          onCancel={() => handleCancelRoute(route.id)}
+          onCancel={() => handleCancelRoute(route.routeRequestId)}
         />
       ))}
     </View>
@@ -178,27 +290,41 @@ export default function DriverTripScreen() {
 
   const renderOrdersTab = () => (
     <>
-      {renderSectionTitle("Đơn hàng đang chờ", pendingOrders.length)}
-      {pendingOrders.length === 0
-        ? renderEmptyState(
-            "Chưa có đơn hàng nào",
-            "Hãy chờ khách hàng để có đơn nhé!",
-            require("../../../../assets/pictures/home/driveroffline.png")
-          )
-        : renderOrdersList()}
+      {renderSectionTitle("Đơn hàng ghép", matchedRequests.length)}
+      {matchingLoading ? (
+        <View style={tw`px-4`}>
+          <SkeletonList count={3} />
+        </View>
+      ) : matchedRequests.length === 0 ? (
+        renderEmptyState(
+          "Chưa có đơn hàng ghép nào",
+          "Hãy tạo chuyến xe để nhận đơn hàng ghép!",
+          require("../../../../assets/pictures/home/driveroffline.png")
+        )
+      ) : (
+        renderOrdersList()
+      )}
+      <Toast {...toast} visible={toast.visible} onHide={hideToast} />
     </>
   );
 
   const renderTripsTab = () => (
     <>
-      {renderSectionTitle("Chuyến xe đã tạo", driverRoutes.length)}
-      {driverRoutes.length === 0
-        ? renderEmptyState(
-            "Bạn chưa có chuyến nào",
-            "Hãy tạo đơn để bắt đầu nhận hàng nào",
-            require("../../../../assets/pictures/home/driveroffline.png")
-          )
-        : renderRoutesList()}
+      {renderSectionTitle("Chuyến xe đã tạo", routeRequests.length)}
+      {loading ? (
+        <View style={tw`px-4`}>
+          <SkeletonList count={2} />
+        </View>
+      ) : routeRequests.length === 0 ? (
+        renderEmptyState(
+          "Bạn chưa có chuyến nào",
+          "Hãy tạo đơn để bắt đầu nhận hàng nào",
+          require("../../../../assets/pictures/home/driveroffline.png")
+        )
+      ) : (
+        renderRoutesList()
+      )}
+      <Toast {...toast} visible={toast.visible} onHide={hideToast} />
     </>
   );
 

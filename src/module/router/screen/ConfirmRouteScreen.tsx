@@ -10,33 +10,88 @@ import tw from "twrnc";
 import {
   Entypo,
   Feather,
-  FontAwesome5,
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouteRequest } from "src/hooks/useRouteRequest";
+import { useVehicle } from "src/hooks/useVehicle";
+import { useToast } from "src/hooks/useToast";
+import Toast from "src/components/Toast";
+import { useAuth } from "@context/AuthContext";
+import { useRoute } from "src/context/RouteContext";
 import UserNoteOverlay from "../components/UserNoteOverlay";
+import CategorySelectOverlay from "src/module/orders/components/CategorySelectOverlay";
 
-const sizes = ["S", "M", "L", "XL", "2XL", "3XL"];
-const categories = ["Thời trang", "Mỹ phẩm", "Khác"];
+const defaultCategories = ["Thời trang", "Mỹ phẩm", "Khác"];
+const allCategories = [
+  "Thời trang",
+  "Mỹ phẩm",
+  "Thực phẩm",
+  "Điện tử",
+  "Sách vở",
+  "Đồ gia dụng",
+  "Đồ chơi",
+  "Thể thao",
+  "Nội thất",
+  "Trang sức",
+  "Khác",
+];
 
 export default function ConfirmRouteScreen() {
   const navigation = useNavigation();
+  const { createRouteRequest, loading } = useRouteRequest();
+  const { user } = useAuth();
+  const { vehicles, getAllVehicles } = useVehicle();
+  const { toast, showSuccess, showError, hideToast } = useToast();
+  const { pickupLocation, dropoffLocation } = useRoute();
+
   const [showVehicleInfo, setShowVehicleInfo] = useState(true);
+  const [showRouteInfo, setShowRouteInfo] = useState(true);
   const [showGoodsInfo, setShowGoodsInfo] = useState(true);
+
+  // Vehicle info
+  const [selectedVehicleId, setSelectedVehicleId] = useState("");
   const [vehicleType, setVehicleType] = useState("");
-  const [dimensions, setDimensions] = useState("");
   const [maxWeight, setMaxWeight] = useState("");
 
-  // Goods info states
+  // Route info
+  const [pickupAddress] = useState(
+    pickupLocation?.fullAddress || "Chọn điểm đón"
+  );
+  const [dropoffAddress] = useState(
+    dropoffLocation?.fullAddress || "Chọn điểm trả"
+  );
+  const [pickupLatitude] = useState(pickupLocation?.latitude || 10.762622);
+  const [pickupLongitude] = useState(pickupLocation?.longitude || 106.660172);
+  const [dropoffLatitude] = useState(dropoffLocation?.latitude || 10.762622);
+  const [dropoffLongitude] = useState(dropoffLocation?.longitude || 106.660172);
+
+  // Goods info
+  const [supportedCommodities, setSupportedCommodities] = useState(
+    defaultCategories[0]
+  );
+  const [cargoHandlingNotes, setCargoHandlingNotes] = useState("");
   const [showNoteOverlay, setShowNoteOverlay] = useState(false);
-  const [driverNote, setDriverNote] = useState("");
+  const [showCategoryOverlay, setShowCategoryOverlay] = useState(false);
   const [tempNote, setTempNote] = useState("");
-  const [selectedSize, setSelectedSize] = useState(sizes[0]);
-  const [selectedCategory, setSelectedCategory] = useState(categories[0]);
-  const [otherCategory, setOtherCategory] = useState("");
-  const [weightRaw, setWeightRaw] = useState("");
+  const [isFullLoad, setIsFullLoad] = useState(false);
+  const [temperatureControlled, setTemperatureControlled] = useState(false);
+  const [minTemp, setMinTemp] = useState("");
+  const [maxTemp, setMaxTemp] = useState("");
+
+  // Additional fields
+  const [departureTime] = useState(new Date().toISOString());
+  const [estimatedArrivalTime] = useState(
+    new Date(Date.now() + 3600000).toISOString()
+  );
+  const [availableWeight, setAvailableWeight] = useState("");
+  const [availableVolume, setAvailableVolume] = useState("");
+
+  React.useEffect(() => {
+    getAllVehicles();
+  }, []);
 
   const handleGoBack = useCallback(() => {
     navigation.goBack();
@@ -50,9 +105,87 @@ export default function ConfirmRouteScreen() {
     navigation.navigate("RouteShipping" as never);
   }, [navigation]);
 
-  const handleCreateRoute = useCallback(() => {
-    navigation.navigate("DriverTrip" as never);
-  }, [navigation]);
+  const handleCreateRoute = useCallback(async () => {
+    // Validate
+    if (!selectedVehicleId) {
+      showError("Vui lòng chọn xe!");
+      return;
+    }
+    if (!availableWeight || !availableVolume) {
+      showError("Vui lòng nhập đầy đủ thông tin tải trọng và thể tích!");
+      return;
+    }
+    if (!pickupLocation || !dropoffLocation) {
+      showError("Vui lòng chọn đầy đủ địa chỉ đón và trả!");
+      return;
+    }
+
+    const data = {
+      driverId: user?.userId || "",
+      vehicleId: selectedVehicleId,
+      pickupAddress,
+      dropoffAddress,
+      pickupLatitude,
+      pickupLongitude,
+      dropoffLatitude,
+      dropoffLongitude,
+      departureTime,
+      estimatedArrivalTime,
+      isFullLoad,
+      availableWeight: Number(availableWeight),
+      availableVolume: Number(availableVolume),
+      supportedCommodities: supportedCommodities || "Hàng hóa chung",
+      cargoHandlingNotes: cargoHandlingNotes || "",
+      temperatureControlled,
+      minTemperatureCelsius: temperatureControlled ? Number(minTemp) || 0 : 0,
+      maxTemperatureCelsius: temperatureControlled ? Number(maxTemp) || 25 : 25,
+      estimatedRouteCost: 55000,
+      estimatedFuelCost: 30000,
+      additionalNotes: cargoHandlingNotes || "",
+      routePolyline: "",
+      status: "Pending",
+    };
+
+    console.log("📦 CreateRouteRequest:", data);
+
+    const response = await createRouteRequest(data);
+
+    console.log("📦 CreateRouteResponse:", response);
+
+    if (response?.isSuccess) {
+      showSuccess("Tạo chuyến thành công!");
+      setTimeout(() => {
+        navigation.navigate("DriverTrip" as never);
+      }, 1200);
+    } else {
+      showError(response?.error?.description || "Tạo chuyến thất bại!");
+    }
+  }, [
+    selectedVehicleId,
+    availableWeight,
+    availableVolume,
+    user,
+    pickupAddress,
+    dropoffAddress,
+    pickupLatitude,
+    pickupLongitude,
+    dropoffLatitude,
+    dropoffLongitude,
+    departureTime,
+    estimatedArrivalTime,
+    isFullLoad,
+    supportedCommodities,
+    cargoHandlingNotes,
+    temperatureControlled,
+    minTemp,
+    maxTemp,
+    pickupLocation,
+    dropoffLocation,
+    createRouteRequest,
+    showSuccess,
+    showError,
+    navigation,
+  ]);
 
   // --- Render functions ---
   const renderHeader = () => (
@@ -67,82 +200,79 @@ export default function ConfirmRouteScreen() {
         <Ionicons name="chevron-back" size={24} color="#00A982" />
       </TouchableOpacity>
       <Text style={tw`text-lg font-semibold text-black flex-1 text-center`}>
-        Chi tiết chuyến xe
+        Xác nhận chuyến xe
       </Text>
-      <TouchableOpacity style={tw`w-10 h-10 items-center justify-center`}>
-        <Feather name="file-plus" size={24} color="black" />
-      </TouchableOpacity>
+      <View style={tw`w-10`} />
     </View>
   );
 
   const renderRouteSection = () => (
-    <View style={tw`bg-white rounded-2xl mx-4 mt-4 p-4 shadow-lg`}>
-      <View style={tw`flex-row items-center mb-2`}>
-        <Text style={tw`text-base font-semibold text-black`}>Lộ trình</Text>
-        <View style={tw`flex-1`} />
-        <FontAwesome5
-          name="exchange-alt"
-          size={16}
-          color="black"
-          style={{ transform: [{ rotate: "90deg" }] }}
-        />
-        <Text style={tw`ml-1 text-base font-semibold text-black`}>
-          Hoán đổi
+    <View style={tw`bg-white rounded-2xl mx-4 mt-4 p-4 shadow-sm`}>
+      <View style={tw`flex-row items-center mb-3`}>
+        <Ionicons name="location-outline" size={20} color="#00A982" />
+        <Text style={tw`ml-2 text-base font-semibold text-black flex-1`}>
+          Lộ trình
         </Text>
-      </View>
-      <View style={tw`mt-2`}>
-        {/* Điểm xuất phát */}
-        <TouchableOpacity
-          style={tw`flex-row items-center mb-4`}
-          onPress={handleNavigateStartPoint}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons
-            name="stop"
-            size={14}
-            color="white"
-            style={tw`bg-black rounded-full p-1`}
+        <TouchableOpacity onPress={() => setShowRouteInfo((v) => !v)}>
+          <Ionicons
+            name={showRouteInfo ? "chevron-up" : "chevron-down"}
+            size={18}
+            color="#6B6B6B"
           />
-          <Text style={tw`ml-2 text-base flex-1 text-black font-medium`}>
-            XV44+7R Thành Phố XXX
-          </Text>
-          <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
-        </TouchableOpacity>
-        {/* Điểm đến */}
-        <TouchableOpacity
-          style={tw`flex-row items-center`}
-          onPress={handleNavigateEndPoint}
-          activeOpacity={0.8}
-        >
-          <Entypo
-            name="arrow-down"
-            size={14}
-            color="#fff"
-            style={tw`bg-[#00A982] rounded-full p-1`}
-          />
-          <Text style={tw`ml-2 text-base flex-1 text-black font-medium`}>
-            XV44+7R Thành Phố XXX
-          </Text>
-          <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
         </TouchableOpacity>
       </View>
+      {showRouteInfo && (
+        <View style={tw`mt-2`}>
+          {/* Điểm xuất phát */}
+          <TouchableOpacity
+            style={tw`flex-row items-start mb-4 bg-gray-50 p-3 rounded-lg`}
+            onPress={handleNavigateStartPoint}
+            activeOpacity={0.8}
+          >
+            <View
+              style={tw`w-6 h-6 rounded-full bg-black items-center justify-center mt-0.5`}
+            >
+              <MaterialCommunityIcons name="circle" size={10} color="white" />
+            </View>
+            <View style={tw`flex-1 ml-3`}>
+              <Text style={tw`text-xs text-gray-500 mb-1`}>Điểm đón</Text>
+              <Text style={tw`text-sm text-black font-medium`}>
+                {pickupAddress}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
+          </TouchableOpacity>
+          {/* Điểm đến */}
+          <TouchableOpacity
+            style={tw`flex-row items-start bg-gray-50 p-3 rounded-lg`}
+            onPress={handleNavigateEndPoint}
+            activeOpacity={0.8}
+          >
+            <View
+              style={tw`w-6 h-6 rounded-full bg-[#00A982] items-center justify-center mt-0.5`}
+            >
+              <Ionicons name="location" size={14} color="white" />
+            </View>
+            <View style={tw`flex-1 ml-3`}>
+              <Text style={tw`text-xs text-gray-500 mb-1`}>Điểm trả</Text>
+              <Text style={tw`text-sm text-black font-medium`}>
+                {dropoffAddress}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 
   const renderVehicleInfoSection = () => (
-    <View style={tw`bg-white rounded-2xl mx-4 mt-4 p-4 shadow-lg`}>
+    <View style={tw`bg-white rounded-2xl mx-4 mt-4 p-4 shadow-sm`}>
       <View style={tw`flex-row items-center mb-3`}>
-        <MaterialCommunityIcons name="car" size={20} color="#00A982" />
-        <Text style={tw`ml-2 text-base font-semibold text-black`}>
-          Thông tin xe <Text style={tw`text-[#00A982]`}>*</Text>
+        <MaterialCommunityIcons name="truck" size={20} color="#00A982" />
+        <Text style={tw`ml-2 text-base font-semibold text-black flex-1`}>
+          Thông tin xe <Text style={tw`text-red-500`}>*</Text>
         </Text>
-        <Ionicons
-          name="information-circle-outline"
-          size={14}
-          color="#6B6B6B"
-          style={tw`ml-1`}
-        />
-        <View style={tw`flex-1`} />
         <TouchableOpacity onPress={() => setShowVehicleInfo((v) => !v)}>
           <Ionicons
             name={showVehicleInfo ? "chevron-up" : "chevron-down"}
@@ -153,43 +283,90 @@ export default function ConfirmRouteScreen() {
       </View>
       {showVehicleInfo && (
         <>
-          {/* Loại xe */}
+          {/* Chọn xe */}
           <View style={tw`mb-4`}>
             <Text style={tw`text-xs text-gray-500 mb-2`}>
-              Loại xe <Text style={tw`text-[#00A982]`}>*</Text>
+              Chọn xe <Text style={tw`text-red-500`}>*</Text>
             </Text>
-            <TextInput
-              style={tw`border border-gray-300 rounded-lg px-3 py-2 text-base text-black`}
-              placeholder="Nhập loại xe"
-              placeholderTextColor="#6B6B6B"
-              value={vehicleType}
-              onChangeText={setVehicleType}
-            />
+            {vehicles.length === 0 ? (
+              <View style={tw`items-center py-4`}>
+                <Text style={tw`text-gray-400 text-sm`}>
+                  Chưa có xe nào. Vui lòng tạo xe trước.
+                </Text>
+              </View>
+            ) : (
+              vehicles.map((vehicle) => (
+                <TouchableOpacity
+                  key={vehicle.vehicleId}
+                  style={tw`flex-row items-center px-3 py-3 mb-2 rounded-lg border ${
+                    selectedVehicleId === vehicle.vehicleId
+                      ? "border-[#00A982] bg-[#E6F7F3]"
+                      : "border-gray-200 bg-gray-50"
+                  }`}
+                  onPress={() => {
+                    setSelectedVehicleId(vehicle.vehicleId);
+                    setVehicleType(vehicle.vehicleType);
+                    setMaxWeight(vehicle.maxWeight.toString());
+                  }}
+                >
+                  <View style={tw`flex-1`}>
+                    <Text style={tw`text-sm font-semibold text-black mb-1`}>
+                      {vehicle.brand} {vehicle.model}
+                    </Text>
+                    <Text style={tw`text-xs text-gray-500`}>
+                      {vehicle.licensePlate} • {vehicle.vehicleType}
+                    </Text>
+                  </View>
+                  {selectedVehicleId === vehicle.vehicleId && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={24}
+                      color="#00A982"
+                    />
+                  )}
+                </TouchableOpacity>
+              ))
+            )}
           </View>
-          {/* Kích thước lòng thùng */}
-          <View style={tw`mb-4`}>
-            <Text style={tw`text-xs text-gray-500 mb-2`}>
-              Kích thước lòng thùng <Text style={tw`text-[#00A982]`}>*</Text>
-            </Text>
-            <TextInput
-              style={tw`border border-gray-300 rounded-lg px-3 py-2 text-base text-black`}
-              placeholder="Nhập kích thước"
-              placeholderTextColor="#6B6B6B"
-              value={dimensions}
-              onChangeText={setDimensions}
-            />
-          </View>
+
           {/* Tải trọng tối đa */}
+          {selectedVehicleId && (
+            <View style={tw`mb-4 bg-blue-50 p-3 rounded-lg`}>
+              <Text style={tw`text-xs text-gray-600 mb-1`}>
+                Tải trọng tối đa
+              </Text>
+              <Text style={tw`text-base font-bold text-black`}>
+                {maxWeight} kg
+              </Text>
+            </View>
+          )}
+
+          {/* Tải trọng còn trống */}
           <View style={tw`mb-4`}>
             <Text style={tw`text-xs text-gray-500 mb-2`}>
-              Tải trọng tối đa (kg) <Text style={tw`text-[#00A982]`}>*</Text>
+              Tải trọng còn trống (kg) <Text style={tw`text-red-500`}>*</Text>
             </Text>
             <TextInput
-              style={tw`border border-gray-300 rounded-lg px-3 py-2 text-base text-black`}
-              placeholder="Nhập khối lượng"
-              placeholderTextColor="#6B6B6B"
-              value={maxWeight}
-              onChangeText={setMaxWeight}
+              style={tw`border border-gray-300 rounded-lg px-4 py-3 text-base text-black`}
+              placeholder="Nhập tải trọng còn trống"
+              placeholderTextColor="#9CA3AF"
+              value={availableWeight}
+              onChangeText={setAvailableWeight}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Thể tích còn trống */}
+          <View style={tw`mb-4`}>
+            <Text style={tw`text-xs text-gray-500 mb-2`}>
+              Thể tích còn trống (m³) <Text style={tw`text-red-500`}>*</Text>
+            </Text>
+            <TextInput
+              style={tw`border border-gray-300 rounded-lg px-4 py-3 text-base text-black`}
+              placeholder="Nhập thể tích còn trống"
+              placeholderTextColor="#9CA3AF"
+              value={availableVolume}
+              onChangeText={setAvailableVolume}
               keyboardType="numeric"
             />
           </View>
@@ -198,25 +375,18 @@ export default function ConfirmRouteScreen() {
     </View>
   );
 
+  // --- Render Goods Info Section ---
   const renderGoodsInfoSection = () => (
-    <View style={tw`bg-white rounded-2xl mx-4 mt-4 p-4 shadow-lg`}>
-      {/* Header */}
+    <View style={tw`bg-white rounded-2xl mx-4 mt-4 p-4 shadow-sm`}>
       <View style={tw`flex-row items-center mb-3`}>
         <MaterialCommunityIcons
           name="package-variant"
           size={20}
           color="#00A982"
         />
-        <Text style={tw`ml-2 text-base font-semibold text-black`}>
-          Thông tin hàng hóa <Text style={tw`text-[#00A982]`}>*</Text>
+        <Text style={tw`ml-2 text-base font-semibold text-black flex-1`}>
+          Thông tin hàng hóa
         </Text>
-        <Ionicons
-          name="information-circle-outline"
-          size={14}
-          color="#6B6B6B"
-          style={tw`ml-1`}
-        />
-        <View style={tw`flex-1`} />
         <TouchableOpacity onPress={() => setShowGoodsInfo((v) => !v)}>
           <Ionicons
             name={showGoodsInfo ? "chevron-up" : "chevron-down"}
@@ -227,122 +397,124 @@ export default function ConfirmRouteScreen() {
       </View>
       {showGoodsInfo && (
         <>
-          {/* Kích cỡ */}
-          <View style={tw`mb-4`}>
-            <View style={tw`flex-row items-center mb-2`}>
-              <Text style={tw`text-xs text-gray-500 flex-1`}>
-                Kích cỡ <Text style={tw`text-[#00A982]`}>*</Text>
-              </Text>
-              <TouchableOpacity>
-                <Text style={tw`text-xs text-[#00A982]`}>Xem hình ảnh</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={tw`text-xs text-gray-400 mb-2`}>
-              Tối đa 25x32x12 cm
-            </Text>
-            <View style={tw`flex-row justify-between`}>
-              {sizes.map((size) => (
-                <TouchableOpacity
-                  key={size}
-                  style={tw`w-12 h-12 rounded-full border items-center justify-center ${
-                    selectedSize === size
-                      ? "bg-[#E6F7F3] border-[#00A982]"
-                      : "bg-white border-gray-300"
-                  }`}
-                  onPress={() => setSelectedSize(size)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={tw`text-sm ${
-                      selectedSize === size
-                        ? "text-[#00A982] font-semibold"
-                        : "text-black"
-                    }`}
-                  >
-                    {size}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-          {/* Khối lượng */}
-          <View style={tw`mb-4`}>
-            <Text style={tw`text-xs text-gray-500 mb-1`}>
-              Khối lượng (kg) <Text style={tw`text-[#00A982]`}>*</Text>
-            </Text>
-            <View style={tw`relative`}>
-              <TextInput
-                style={tw`flex-1 border border-gray-300 rounded-lg px-3 py-2 text-base text-black pr-10`}
-                placeholder="Nhập khối lượng"
-                placeholderTextColor="#6B6B6B"
-                value={weightRaw}
-                onChangeText={setWeightRaw}
-                keyboardType="numeric"
-              />
-              {weightRaw.length > 0 && (
-                <TouchableOpacity
-                  style={tw`absolute right-3 top-1/2 -translate-y-1/2`}
-                  onPress={() => setWeightRaw("")}
-                >
-                  <Ionicons name="close-circle" size={22} color="#FF4D4F" />
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-          {/* Loại hàng hóa */}
+          {/* Loại hàng hóa hỗ trợ */}
           <View style={tw`mb-4`}>
             <Text style={tw`text-xs text-gray-500 mb-2`}>
-              Loại hàng hóa <Text style={tw`text-[#00A982]`}>*</Text>
+              Loại hàng hóa hỗ trợ
             </Text>
             <View style={tw`flex-row`}>
-              {categories.map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={tw`px-4 py-2 rounded-full border mr-2 ${
-                    selectedCategory === type
-                      ? "bg-[#E6F7F3] border-[#00A982]"
-                      : "bg-white border-gray-300"
-                  }`}
-                  onPress={() => setSelectedCategory(type)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={tw`text-sm ${
-                      selectedCategory === type
-                        ? "text-[#00A982] font-semibold"
-                        : "text-black"
-                    }`}
-                  >
-                    {type}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            {selectedCategory === "Khác" && (
-              <View style={tw`flex-row items-center mt-2 relative`}>
-                <TextInput
-                  style={tw`flex-1 border border-gray-300 rounded-lg px-3 py-2 text-base text-black pr-10`}
-                  placeholder="Nhập loại hàng hóa khác"
-                  placeholderTextColor="#6B6B6B"
-                  value={otherCategory}
-                  onChangeText={setOtherCategory}
-                />
-                {otherCategory.length > 0 && (
+              {defaultCategories.slice(0, -1).map((type) => {
+                const isSelected = supportedCommodities === type;
+                return (
                   <TouchableOpacity
-                    style={tw`absolute right-3`}
-                    onPress={() => setOtherCategory("")}
+                    key={type}
+                    style={tw`flex-1 px-3 py-2.5 rounded-full border mr-2 ${
+                      isSelected
+                        ? "bg-[#E6F7F3] border-[#00A982]"
+                        : "bg-white border-gray-300"
+                    }`}
+                    onPress={() => setSupportedCommodities(type)}
+                    activeOpacity={0.8}
                   >
-                    <Ionicons name="close-circle" size={22} color="#FF4D4F" />
+                    <Text
+                      style={tw`text-sm text-center ${
+                        isSelected
+                          ? "text-[#00A982] font-semibold"
+                          : "text-black"
+                      }`}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      {type}
+                    </Text>
                   </TouchableOpacity>
-                )}
-              </View>
-            )}
+                );
+              })}
+              {/* Nút Khác hoặc category đã chọn từ overlay */}
+              <TouchableOpacity
+                style={tw`flex-1 px-3 py-2.5 rounded-full border mr-2 ${
+                  !defaultCategories.includes(supportedCommodities)
+                    ? "bg-[#E6F7F3] border-[#00A982]"
+                    : "bg-white border-gray-300"
+                }`}
+                onPress={() => setShowCategoryOverlay(true)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={tw`text-sm text-center ${
+                    !defaultCategories.includes(supportedCommodities)
+                      ? "text-[#00A982] font-semibold"
+                      : "text-black"
+                  }`}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {!defaultCategories.includes(supportedCommodities)
+                    ? supportedCommodities
+                    : defaultCategories[defaultCategories.length - 1]}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          {/* Ghi chú cho khách hàng */}
+
+          {/* Full load checkbox */}
           <TouchableOpacity
-            style={tw`flex-row items-center border-t border-gray-200 pt-3`}
+            style={tw`flex-row items-center mb-4 bg-gray-50 p-3 rounded-lg`}
+            onPress={() => setIsFullLoad(!isFullLoad)}
+          >
+            <Ionicons
+              name={isFullLoad ? "checkbox" : "square-outline"}
+              size={24}
+              color="#00A982"
+            />
+            <Text style={tw`ml-3 text-sm text-black flex-1`}>
+              Chuyến hàng đầy (Full load)
+            </Text>
+          </TouchableOpacity>
+
+          {/* Temperature control */}
+          <TouchableOpacity
+            style={tw`flex-row items-center mb-4 bg-gray-50 p-3 rounded-lg`}
+            onPress={() => setTemperatureControlled(!temperatureControlled)}
+          >
+            <Ionicons
+              name={temperatureControlled ? "checkbox" : "square-outline"}
+              size={24}
+              color="#00A982"
+            />
+            <Text style={tw`ml-3 text-sm text-black flex-1`}>
+              Kiểm soát nhiệt độ
+            </Text>
+          </TouchableOpacity>
+          {temperatureControlled && (
+            <View style={tw`flex-row gap-3 mb-4`}>
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-xs text-gray-500 mb-2`}>Min (°C)</Text>
+                <TextInput
+                  style={tw`border border-gray-300 rounded-lg px-4 py-3 text-base text-black`}
+                  placeholder="0"
+                  value={minTemp}
+                  onChangeText={setMinTemp}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-xs text-gray-500 mb-2`}>Max (°C)</Text>
+                <TextInput
+                  style={tw`border border-gray-300 rounded-lg px-4 py-3 text-base text-black`}
+                  placeholder="25"
+                  value={maxTemp}
+                  onChangeText={setMaxTemp}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+          )}
+          {/* Ghi chú cho tài xế */}
+          <TouchableOpacity
+            style={tw`flex-row items-center border-t border-gray-200 pt-3 mt-3`}
             onPress={() => {
-              setTempNote(driverNote);
+              setTempNote(cargoHandlingNotes ?? "");
               setShowNoteOverlay(true);
             }}
           >
@@ -352,15 +524,16 @@ export default function ConfirmRouteScreen() {
             </Text>
             <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
           </TouchableOpacity>
-          {/* Hiện ghi chú nếu có */}
-          {driverNote ? (
+          {cargoHandlingNotes ? (
             <View
               style={tw`mt-2 px-2 py-2 bg-gray-100 rounded-lg flex-row items-center`}
             >
-              <Text style={tw`text-sm text-gray-700 flex-1`}>{driverNote}</Text>
+              <Text style={tw`text-sm text-gray-700 flex-1`}>
+                {cargoHandlingNotes}
+              </Text>
               <TouchableOpacity
                 style={tw`ml-2 px-2 py-1`}
-                onPress={() => setDriverNote("")}
+                onPress={() => setCargoHandlingNotes("")}
               >
                 <Ionicons name="close-circle" size={18} color="#FF4D4F" />
               </TouchableOpacity>
@@ -372,64 +545,59 @@ export default function ConfirmRouteScreen() {
   );
 
   const renderFooter = () => (
-    <View style={tw`bg-white px-4 pt-4 pb-4`}>
-      <View style={tw`flex-row items-center justify-between my-4`}>
-        <View style={tw`flex-row items-center`}>
-          <Text
-            style={tw`text-base text-black font-semibold`}
-            numberOfLines={1}
-          >
-            Chi phí ước tính
-          </Text>
-          <Ionicons
-            name="information-circle-outline"
-            size={14}
-            color="#6B6B6B"
-            style={tw`ml-1`}
-          />
-        </View>
+    <View style={tw`bg-white px-4 py-4 border-t border-gray-100`}>
+      <View style={tw`flex-row items-center justify-between mb-4`}>
+        <Text style={tw`text-sm text-gray-600`}>Chi phí ước tính</Text>
         <Text style={tw`text-xl text-[#00A982] font-bold`}>₫55.000</Text>
       </View>
-      {/* Nút tạo chuyến */}
       <TouchableOpacity
-        style={tw`bg-[#00A982] py-3 rounded-xl`}
+        style={tw`bg-[#00A982] py-4 rounded-xl ${loading ? "opacity-50" : ""}`}
         onPress={handleCreateRoute}
         activeOpacity={0.8}
+        disabled={loading}
       >
         <Text style={tw`text-white text-center font-bold text-base`}>
-          Tạo chuyến
+          {loading ? "Đang tạo chuyến..." : "Tạo chuyến"}
         </Text>
       </TouchableOpacity>
     </View>
   );
 
-  // --- Main render ---
   return (
-    <SafeAreaView style={tw`flex-1 bg-white`}>
+    <SafeAreaView style={tw`flex-1 bg-[#F8FFFE]`}>
       {renderHeader()}
       <ScrollView
-        style={tw`flex-1 bg-[#F8FFFE]`}
+        style={tw`flex-1`}
         contentContainerStyle={tw`pb-6`}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={{ position: "relative", minHeight: 800 }}>
-          <View style={{ position: "relative", zIndex: 1 }}>
-            {renderRouteSection()}
-            {renderVehicleInfoSection()}
-            {renderGoodsInfoSection()}
-          </View>
-        </View>
+        {renderRouteSection()}
+        {renderVehicleInfoSection()}
+        {renderGoodsInfoSection()}
       </ScrollView>
+      {renderFooter()}
+      <Toast {...toast} onHide={hideToast} />
       <UserNoteOverlay
         visible={showNoteOverlay}
         value={tempNote}
         onChange={setTempNote}
         onCancel={() => setShowNoteOverlay(false)}
         onOk={() => {
-          setDriverNote(tempNote);
+          setCargoHandlingNotes(tempNote);
           setShowNoteOverlay(false);
         }}
       />
-      {renderFooter()}
+      {/* Overlay chọn category */}
+      <CategorySelectOverlay
+        visible={showCategoryOverlay}
+        categories={allCategories}
+        selected={supportedCommodities}
+        onSelect={(value) => {
+          setSupportedCommodities(value);
+          setShowCategoryOverlay(false);
+        }}
+        onCancel={() => setShowCategoryOverlay(false)}
+      />
     </SafeAreaView>
   );
 }

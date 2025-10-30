@@ -5,11 +5,16 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from "react-native";
 import tw from "twrnc";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useVehicle } from "src/hooks/useVehicle";
+import { useAuth } from "@context/AuthContext";
+import { useToast } from "src/hooks/useToast";
+import Toast from "src/components/Toast";
 
 const VEHICLE_TYPE_OPTIONS = [
   { label: "Xe máy", value: "MOTORCYCLE" },
@@ -19,6 +24,9 @@ const VEHICLE_TYPE_OPTIONS = [
 
 export default function CreateVehicleScreen() {
   const navigation = useNavigation();
+  const { createVehicle, loading } = useVehicle();
+  const { user } = useAuth();
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
   const [licensePlate, setLicensePlate] = useState("");
   const [brand, setBrand] = useState("");
@@ -32,10 +40,43 @@ export default function CreateVehicleScreen() {
 
   const handleGoBack = () => navigation.goBack();
 
-  const handleSubmit = () => {
-    // TODO: Gọi API tạo xe
-    // validate dữ liệu trước khi gửi
-    // Nếu thành công: navigation.goBack();
+  const handleSubmit = async () => {
+    // Validate dữ liệu
+    if (
+      !licensePlate ||
+      !brand ||
+      !model ||
+      !year ||
+      !color ||
+      !maxWeight ||
+      !maxVolume ||
+      !maxSeats
+    ) {
+      Alert.alert("Thiếu thông tin", "Vui lòng nhập đầy đủ thông tin xe!");
+      return;
+    }
+
+    const data = {
+      driverId: user?.userId || "", // Lấy từ user context
+      licensePlate,
+      brand,
+      model,
+      year: Number(year),
+      color,
+      vehicleType,
+      maxWeight: Number(maxWeight),
+      maxVolume: Number(maxVolume),
+      maxSeats: Number(maxSeats),
+    };
+
+    const response = await createVehicle(data);
+
+    if (response?.isSuccess) {
+      showSuccess("Tạo xe thành công!");
+      setTimeout(() => navigation.goBack(), 1200);
+    } else {
+      showError(response?.error?.description || "Tạo xe thất bại!");
+    }
   };
 
   const renderHeader = () => (
@@ -63,7 +104,9 @@ export default function CreateVehicleScreen() {
         Thông tin cơ bản
       </Text>
       {/* Biển số xe */}
-      <Text style={tw`text-xs text-gray-500 mb-1`}>Biển số xe *</Text>
+      <Text style={tw`text-xs text-gray-500 mb-1`}>
+        Biển số xe <Text style={tw`text-[#00A982]`}>*</Text>
+      </Text>
       <TextInput
         style={tw`bg-gray-50 rounded-lg px-3 py-2 mb-3 border border-gray-200`}
         placeholder="Nhập biển số xe"
@@ -71,7 +114,9 @@ export default function CreateVehicleScreen() {
         onChangeText={setLicensePlate}
       />
       {/* Hãng xe */}
-      <Text style={tw`text-xs text-gray-500 mb-1`}>Hãng xe *</Text>
+      <Text style={tw`text-xs text-gray-500 mb-1`}>
+        Hãng xe <Text style={tw`text-[#00A982]`}>*</Text>
+      </Text>
       <TextInput
         style={tw`bg-gray-50 rounded-lg px-3 py-2 mb-3 border border-gray-200`}
         placeholder="Nhập hãng xe"
@@ -79,7 +124,9 @@ export default function CreateVehicleScreen() {
         onChangeText={setBrand}
       />
       {/* Dòng xe */}
-      <Text style={tw`text-xs text-gray-500 mb-1`}>Dòng xe *</Text>
+      <Text style={tw`text-xs text-gray-500 mb-1`}>
+        Dòng xe <Text style={tw`text-[#00A982]`}>*</Text>
+      </Text>
       <TextInput
         style={tw`bg-gray-50 rounded-lg px-3 py-2 mb-3 border border-gray-200`}
         placeholder="Nhập dòng xe"
@@ -87,7 +134,9 @@ export default function CreateVehicleScreen() {
         onChangeText={setModel}
       />
       {/* Năm sản xuất */}
-      <Text style={tw`text-xs text-gray-500 mb-1`}>Năm sản xuất *</Text>
+      <Text style={tw`text-xs text-gray-500 mb-1`}>
+        Năm sản xuất <Text style={tw`text-[#00A982]`}>*</Text>
+      </Text>
       <TextInput
         style={tw`bg-gray-50 rounded-lg px-3 py-2 mb-3 border border-gray-200`}
         placeholder="VD: 2022"
@@ -96,7 +145,9 @@ export default function CreateVehicleScreen() {
         keyboardType="numeric"
       />
       {/* Màu xe */}
-      <Text style={tw`text-xs text-gray-500 mb-1`}>Màu xe *</Text>
+      <Text style={tw`text-xs text-gray-500 mb-1`}>
+        Màu xe <Text style={tw`text-[#00A982]`}>*</Text>
+      </Text>
       <TextInput
         style={tw`bg-gray-50 rounded-lg px-3 py-2 mb-1 border border-gray-200`}
         placeholder="Nhập màu xe"
@@ -144,7 +195,7 @@ export default function CreateVehicleScreen() {
       </Text>
       {/* Trọng tải tối đa */}
       <Text style={tw`text-xs text-gray-500 mb-1`}>
-        Trọng tải tối đa (kg) *
+        Trọng tải tối đa (kg) <Text style={tw`text-[#00A982]`}>*</Text>
       </Text>
       <TextInput
         style={tw`bg-gray-50 rounded-lg px-3 py-2 mb-3 border border-gray-200`}
@@ -154,7 +205,9 @@ export default function CreateVehicleScreen() {
         keyboardType="numeric"
       />
       {/* Thể tích tối đa */}
-      <Text style={tw`text-xs text-gray-500 mb-1`}>Thể tích tối đa (m³) *</Text>
+      <Text style={tw`text-xs text-gray-500 mb-1`}>
+        Thể tích tối đa (m³) <Text style={tw`text-[#00A982]`}>*</Text>
+      </Text>
       <TextInput
         style={tw`bg-gray-50 rounded-lg px-3 py-2 mb-3 border border-gray-200`}
         placeholder="VD: 12"
@@ -163,7 +216,9 @@ export default function CreateVehicleScreen() {
         keyboardType="numeric"
       />
       {/* Số ghế tối đa */}
-      <Text style={tw`text-xs text-gray-500 mb-1`}>Số ghế tối đa *</Text>
+      <Text style={tw`text-xs text-gray-500 mb-1`}>
+        Số ghế tối đa <Text style={tw`text-[#00A982]`}>*</Text>
+      </Text>
       <TextInput
         style={tw`bg-gray-50 rounded-lg px-3 py-2 mb-1 border border-gray-200`}
         placeholder="VD: 2"
@@ -181,17 +236,20 @@ export default function CreateVehicleScreen() {
         {renderBasicInfoCard()}
         {renderTypeCard()}
         {renderSpecCard()}
-        {/* Nút xác nhận */}
         <View style={tw`mx-4 mt-6 mb-8`}>
           <TouchableOpacity
             style={tw`bg-[#00A982] rounded-full py-3 items-center shadow`}
             onPress={handleSubmit}
             activeOpacity={0.85}
+            disabled={loading}
           >
-            <Text style={tw`text-white font-bold text-base`}>Tạo xe</Text>
+            <Text style={tw`text-white font-bold text-base`}>
+              {loading ? "Đang tạo xe..." : "Tạo xe"}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <Toast {...toast} onHide={hideToast} />
     </SafeAreaView>
   );
 }
