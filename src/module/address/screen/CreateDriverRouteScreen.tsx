@@ -21,6 +21,7 @@ import {
   HelpItemProps,
   HelpItemType,
 } from "src/types/address.interface,";
+import { useRoute } from "src/context/RouteContext";
 
 type CreateDriverRouteNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -110,6 +111,8 @@ const HelpItem = ({ item, onPress }: HelpItemProps) => (
 
 export default function CreateDriverRouteScreen() {
   const navigation = useNavigation<CreateDriverRouteNavigationProp>();
+  const { setPickupLocation } = useRoute();
+  const { coordinates, address: currentAddress } = useCurrentLocation();
   const [searchText, setSearchText] = useState("");
   const [mapLocation, setMapLocation] = useState<any>(null);
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -176,8 +179,22 @@ export default function CreateDriverRouteScreen() {
   }, [navigation]);
 
   const handleCurrentLocation = useCallback(() => {
+    if (coordinates && currentAddress) {
+      setPickupLocation({
+        fullAddress: currentAddress,
+        street: currentAddress.split(",")[0] || "",
+        ward: "",
+        district: currentAddress.split(",")[1]?.trim() || "",
+        city: currentAddress.split(",")[2]?.trim() || "",
+        province: "",
+        postalCode: "",
+        country: "Vietnam",
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+      });
+    }
     navigation.navigate("ConfirmRoute" as never);
-  }, [navigation]);
+  }, [coordinates, currentAddress, setPickupLocation, navigation]);
 
   const handleAddNew = useCallback(() => {
     console.log("Add new address...");
@@ -224,11 +241,31 @@ export default function CreateDriverRouteScreen() {
     [debounceTimer, fetchAddressSuggestions]
   );
 
-  const handleSuggestionSelect = useCallback((item: any) => {
-    setSearchText(item.display_name);
-    setShowDropdown(false);
-    console.log("Selected suggestion:", item);
-  }, []);
+  const handleSuggestionSelect = useCallback(
+    (item: any) => {
+      const addressText = item.display_name;
+      setSearchText(addressText);
+      setShowDropdown(false);
+
+      // Lưu địa chỉ vào context
+      setPickupLocation({
+        fullAddress: addressText,
+        street: item.address?.road || "",
+        ward: item.address?.suburb || "",
+        district: item.address?.city || item.address?.town || "",
+        city: item.address?.state || "",
+        province: "",
+        postalCode: item.address?.postcode || "",
+        country: item.address?.country || "Vietnam",
+        latitude: parseFloat(item.lat),
+        longitude: parseFloat(item.lon),
+      });
+
+      // Chuyển sang ConfirmRoute
+      navigation.navigate("ConfirmRoute" as never);
+    },
+    [setPickupLocation, navigation]
+  );
 
   const handleSearchFocus = useCallback(() => {
     setSearchFocused(true);

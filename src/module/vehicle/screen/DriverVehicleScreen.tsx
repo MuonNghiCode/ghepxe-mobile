@@ -1,54 +1,27 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import tw from "twrnc";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DriverVehicleCard from "../components/DriverVehicleCard";
+import { useVehicle } from "src/hooks/useVehicle";
 
 const VEHICLE_TYPES = [
-  { key: "all", label: "Tất cả", icon: "car-outline" },
-  { key: "Xe tải", label: "Xe tải", icon: "truck-outline" },
-  { key: "Bán tải", label: "Bán tải", icon: "car-pickup" },
-  { key: "Xe máy", label: "Xe máy", icon: "motorbike" },
-];
-
-const dummyVehicles = [
-  {
-    id: "1",
-    name: "Xe tải Fuso 1.5T",
-    plate: "51C-123.45",
-    type: "Xe tải",
-    image: require("../../../assets/pictures/logo.png"),
-    status: "Đang hoạt động",
-  },
-  {
-    id: "2",
-    name: "Xe bán tải Ford Ranger",
-    plate: "51D-678.90",
-    type: "Bán tải",
-    image: require("../../../assets/pictures/logo.png"),
-    status: "Đang hoạt động",
-  },
-  {
-    id: "3",
-    name: "Honda Wave Alpha",
-    plate: "59X3-456.78",
-    type: "Xe máy",
-    image: require("../../../assets/pictures/logo.png"),
-    status: "Đang bảo trì",
-  },
+  { key: "all", label: "Tất cả" },
+  { key: "Xe tải", label: "Xe tải" },
+  { key: "Bán tải", label: "Bán tải" },
+  { key: "Xe máy", label: "Xe máy" },
 ];
 
 export default function DriverVehicleScreen() {
   const navigation = useNavigation();
-  const [vehicles, setVehicles] = useState<any[]>([]);
+  const { vehicles, getAllVehicles, loading } = useVehicle();
   const [filterType, setFilterType] = useState("all");
   const [showFilterBar, setShowFilterBar] = useState(false);
 
   useEffect(() => {
-    // TODO: Gọi API lấy danh sách xe của tài xế
-    setVehicles(dummyVehicles);
+    getAllVehicles();
   }, []);
 
   const handleCreateVehicle = useCallback(() => {
@@ -70,7 +43,7 @@ export default function DriverVehicleScreen() {
   const filteredVehicles =
     filterType === "all"
       ? vehicles
-      : vehicles.filter((v) => v.type === filterType);
+      : vehicles.filter((v) => v.vehicleType === filterType);
 
   const renderHeader = () => (
     <View
@@ -90,9 +63,8 @@ export default function DriverVehicleScreen() {
     </View>
   );
 
-  // Nút tạo xe nổi bật
   const renderCreateButton = () => (
-    <View style={tw`px-4 pt-4 pb-2 bg-white`}>
+    <View style={tw`px-4 pt-4 pb-2`}>
       <TouchableOpacity
         style={tw`flex-row items-center justify-center bg-[#00A982] rounded-full py-3 shadow`}
         onPress={handleCreateVehicle}
@@ -106,9 +78,10 @@ export default function DriverVehicleScreen() {
     </View>
   );
 
-  // Thanh thông tin tổng số xe và nút filter
   const renderInfoBar = () => (
-    <View style={tw`flex-row items-center justify-between px-4 py-2 bg-white`}>
+    <View
+      style={tw`flex-row items-center justify-between px-4 py-2 bg-transparent`}
+    >
       <View style={tw`flex-row items-center`}>
         <Ionicons name="car-outline" size={18} color="#00A982" />
         <Text style={tw`ml-2 text-base font-semibold text-black`}>
@@ -121,17 +94,18 @@ export default function DriverVehicleScreen() {
         activeOpacity={0.85}
       >
         <Ionicons name="filter-outline" size={18} color="#00A982" />
-        <Text style={tw`ml-1 text-xs font-semibold text-[#00A982]`}>
+        <Text
+          style={tw`ml-1 text-xs font-semibold text-[#00A982] bg-transparent`}
+        >
           Bộ lọc
         </Text>
       </TouchableOpacity>
     </View>
   );
 
-  // Bộ lọc loại xe (hiện khi showFilterBar = true)
   const renderFilterBar = () =>
     showFilterBar && (
-      <View style={tw`flex-row px-4 py-2 bg-white`}>
+      <View style={tw`flex-row px-4 py-2 bg-transparent`}>
         {VEHICLE_TYPES.map((type) => (
           <TouchableOpacity
             key={type.key}
@@ -161,13 +135,19 @@ export default function DriverVehicleScreen() {
     );
 
   return (
-    <SafeAreaView style={tw`flex-1 bg-gray-50`}>
+    <SafeAreaView style={tw`flex-1 bg-white`}>
       {renderHeader()}
-      {renderCreateButton()}
-      {renderInfoBar()}
-      {renderFilterBar()}
-      <ScrollView style={tw`pt-2`} showsVerticalScrollIndicator={false}>
-        {filteredVehicles.length === 0 ? (
+      <ScrollView
+        style={tw`pt-2 bg-[#F8FFFE]`}
+        showsVerticalScrollIndicator={false}
+      >
+        {loading ? (
+          <View style={tw`items-center justify-center mt-16`}>
+            <Text style={tw`text-gray-500 mt-4 text-base`}>
+              Đang tải danh sách xe...
+            </Text>
+          </View>
+        ) : filteredVehicles.length === 0 ? (
           <View style={tw`items-center justify-center mt-16`}>
             <Ionicons name="car-outline" size={48} color="#D1D5DB" />
             <Text style={tw`text-gray-500 mt-4 text-base`}>
@@ -175,13 +155,25 @@ export default function DriverVehicleScreen() {
             </Text>
           </View>
         ) : (
-          filteredVehicles.map((vehicle) => (
-            <DriverVehicleCard
-              key={vehicle.id}
-              vehicle={vehicle}
-              onPress={handleVehicleDetail}
-            />
-          ))
+          <View>
+            {renderCreateButton()}
+            {renderInfoBar()}
+            {renderFilterBar()}
+            {filteredVehicles.map((vehicle) => (
+              <DriverVehicleCard
+                key={vehicle.vehicleId}
+                vehicle={{
+                  id: vehicle.vehicleId,
+                  name: vehicle.brand + " " + vehicle.model,
+                  plate: vehicle.licensePlate,
+                  type: vehicle.vehicleType,
+                  image: require("../../../assets/pictures/logo.png"),
+                  status: vehicle.status || "Đang hoạt động",
+                }}
+                onPress={handleVehicleDetail}
+              />
+            ))}
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>

@@ -25,11 +25,21 @@ export const API_ENDPOINTS = {
     UPDATE_ITEM: "/api/User/ShipRequest/Item/{itemId}",
     DELETE_ITEM: "/api/User/ShipRequest/Item/{itemId}",
   },
+  ROUTE_REQUEST: {
+    CREATE: "/api/Driver/RouteRequest",
+    GET_ALL: "/api/Driver/RouteRequest",
+    GET_DETAIL: "/api/Driver/RouteRequest/{routeRequestId}",
+    DELETE: "/api/Driver/RouteRequest/{routeRequestId}",
+    UPDATE: "/api/Driver/RouteRequest/{routeRequestId}",
+    ASSIGN: "/api/Driver/RouteRequest/{routeRequestId}/ship-request",
+  },
   GEMINI: {
-    MATCHING: "api/User/Gemini/Matching"
+    USER_MATCHING: "api/User/Gemini/Matching",
+    DRIVER_MATCHING: "api/Driver/Gemini/Matching",
   },
   VEHICLE: {
-    CREATE_VEHICLE: "/api/Driver/Vehicle/create"
+    CREATE_VEHICLE: "/api/Driver/Vehicle/create",
+    GET_ALL_VEHICLES: "/api/Driver/Vehicle/my-vehicles",
   },
   FILE: {
     UPLOAD: "/api/User/File/upload",
