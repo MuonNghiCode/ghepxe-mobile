@@ -29,7 +29,8 @@ export const API_ENDPOINTS = {
     MATCHING: "api/User/Gemini/Matching"
   },
   VEHICLE: {
-    CREATE_VEHICLE: "/api/Driver/Vehicle/create"
+    CREATE_VEHICLE: "/api/Driver/Vehicle/create",
+    GET_ALL_VEHICLES: "/api/Driver/Vehicle/my-vehicles",
   },
   FILE: {
     UPLOAD: "/api/User/File/upload",

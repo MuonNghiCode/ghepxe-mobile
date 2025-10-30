@@ -154,7 +154,27 @@ export interface GetFileResponseData {
   fileExtension: string;
 }
 
+export interface CreateVehicleResponseData {
+    vehicleId: string;
+}
+
+export interface GetVehicleResponseData {
+    vehicleId: string;
+    licensePlate: string;
+    brand: string;
+    model: string;
+    year: number;
+    color: string;
+    vehicleType: string;
+    maxWeight: number;
+    maxVolume: number;
+    maxSeats: number;
+    status: string;
+}
+
 // Type aliases
+export type GetVehicleResponse = ApiResponse<GetVehicleResponseData>;
+export type CreateVehicleResponse = ApiResponse<CreateVehicleResponseData>;
 export type UploadFileResponse = ApiResponse<UploadFileResponseData>;
 export type CreateShipRequestResponse = ApiResponse<string>;
 export type LoginResponse = ApiResponse<LoginResponseData>;

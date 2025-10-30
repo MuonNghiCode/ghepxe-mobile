@@ -65,3 +65,15 @@ export interface GetFileRequest {
   expirationMinutes?: number; // mặc định 2880 nếu không truyền
 }
 
+export interface CreateVehicleRequest {
+    driverId: string,
+    licensePlate: string,
+    brand: string,
+    model: string,
+    year: number,
+    color: string,
+    vehicleType: string,
+    maxWeight: number,
+    maxVolume: number,
+    maxSeats: number,
+}
