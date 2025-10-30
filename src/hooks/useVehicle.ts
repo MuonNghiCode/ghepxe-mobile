@@ -1,12 +1,12 @@
 import { useState } from "react";
-import {  CreateVehicleResponse, GetVehicleResponseData } from "src/types/responses";
+import {  CreateVehicleResponse, VehicleResponseData, } from "src/types/responses";
 import { vehicleService } from "src/service/vehicleService";
 import { CreateVehicleRequest } from "src/types";
 
 export function useVehicle() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [vehicles, setVehicles] = useState<GetVehicleResponseData[]>([]);
+  const [vehicles, setVehicles] = useState<VehicleResponseData[]>([]);
   const [createResult, setCreateResult] = useState<CreateVehicleResponse | null>(null);
 
   // Tạo xe mới

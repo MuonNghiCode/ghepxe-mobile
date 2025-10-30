@@ -52,6 +52,32 @@ export interface CreateShipRequestRequest {
     specialRequest?: SpecialRequestData;
 }
 
+export interface CreateRouteRequestRequest {
+  driverId: string;
+  vehicleId: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  pickupLatitude: number;
+  pickupLongitude: number;
+  dropoffLatitude: number;
+  dropoffLongitude: number;
+  departureTime: string;
+  estimatedArrivalTime: string;
+  isFullLoad: boolean;
+  availableWeight: number;
+  availableVolume: number;
+  supportedCommodities: string;
+  cargoHandlingNotes: string;
+  temperatureControlled: boolean;
+  minTemperatureCelsius: number;
+  maxTemperatureCelsius: number;
+  estimatedRouteCost: number;
+  estimatedFuelCost: number;
+  additionalNotes: string;
+  routePolyline: string;
+  status: string;
+}
+
 export interface UploadFileRequest {
     file: {
         uri: string;      // Đường dẫn file local

@@ -158,7 +158,7 @@ export interface CreateVehicleResponseData {
     vehicleId: string;
 }
 
-export interface GetVehicleResponseData {
+export interface VehicleResponseData {
     vehicleId: string;
     licensePlate: string;
     brand: string;
@@ -172,8 +172,44 @@ export interface GetVehicleResponseData {
     status: string;
 }
 
+export interface CreateRouteRequestResponseData {
+    routeRequestId: string;
+}
+export interface RouteRequestResponseData {
+    routeRequestId: string;
+    driverId: string;
+    vehicleId: string;
+    pickupAddress: string;
+    dropoffAddress: string;
+    pickupLatitude: number;
+    pickupLongitude: number;
+    dropoffLatitude: number;
+    dropoffLongitude: number;
+     departureTime: string;
+    estimatedArrivalTime: string;
+    isFullLoad: boolean;
+    availableWeight: number;
+    availableVolume: number;
+    supportedCommodities: string;
+    cargoHandlingNotes: string;
+    temperatureControlled: boolean;
+    minTemperatureCelsius: number;
+    maxTemperatureCelsius: number;
+    estimatedRouteCost: number;
+    estimatedFuelCost: number;
+    additionalNotes: string;
+    routePolyline: string;
+    status: string;
+    createdDate: string;
+    modifiedDate: string;
+    vehicle: VehicleResponseData;
+    shipRequests: ShipRequestResponseData[];
+}
+
 // Type aliases
-export type GetVehicleResponse = ApiResponse<GetVehicleResponseData>;
+export type GetRouteRequestResponse = ApiResponse<RouteRequestResponseData>;
+export type CreateRouteRequestResponse = ApiResponse<CreateRouteRequestResponseData>;
+export type GetVehicleResponse = ApiResponse<VehicleResponseData>;
 export type CreateVehicleResponse = ApiResponse<CreateVehicleResponseData>;
 export type UploadFileResponse = ApiResponse<UploadFileResponseData>;
 export type CreateShipRequestResponse = ApiResponse<string>;
