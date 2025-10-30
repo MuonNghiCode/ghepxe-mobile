@@ -67,6 +67,7 @@ export interface ProfileResponseData {
     email: string;
     phone: string;
     address: string;
+    avatarUrl: string | null;
     status: string;
     createdDate: string;
     modifiedDate: string;

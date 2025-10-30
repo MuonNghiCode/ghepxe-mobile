@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
 import tw from "twrnc";
 import { useNavigation } from "@react-navigation/native";
@@ -6,14 +6,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import suggestedOrders from "../../../../constants/suggestedOrder";
 import OrderStatusCard from "../../../../components/OrderStatusCard";
 import DriverRouteCard from "../../components/DriverRouterCard";
-import mockDriverRoutes from "src/constants/driver";
+import { useRouteRequest } from "src/hooks/useRouteRequest";
+import { useAuth } from "src/context/AuthContext";
 
 type TabType = "order" | "trip";
 
 export default function DriverTripScreen() {
   const navigation = useNavigation();
   const [tab, setTab] = useState<TabType>("order");
-  const [driverRoutes, setDriverRoutes] = useState(mockDriverRoutes);
+
+  // Hook lấy route requests từ backend
+  const { routeRequests, getAllRouteRequests, loading } = useRouteRequest();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    getAllRouteRequests();
+  }, []);
 
   const pendingOrders = suggestedOrders.filter(
     (order) => order.status === "CHỜ XÁC NHẬN"
@@ -31,9 +39,16 @@ export default function DriverTripScreen() {
     // xử lý liên hệ
   }, []);
 
-  const handleCancelRoute = useCallback((routeId: string) => {
-    setDriverRoutes((prev) => prev.filter((route) => route.id !== routeId));
-  }, []);
+  const handleCancelRoute = useCallback(
+    (routeId: string) => {
+      // Nếu muốn xóa khỏi backend thì gọi API, nếu chỉ muốn xóa khỏi UI thì filter lại
+      // Ví dụ: gọi API hủy chuyến, sau đó gọi getAllRouteRequests lại
+      // getAllRouteRequests();
+    },
+    [
+      /* getAllRouteRequests */
+    ]
+  );
 
   const renderHeader = () => (
     <View style={tw`bg-[#4CC9A6] py-2`}>
@@ -163,14 +178,33 @@ export default function DriverTripScreen() {
     </View>
   );
 
+  // Sử dụng dữ liệu từ backend, map đúng field cho DriverRouteCard
   const renderRoutesList = () => (
     <View style={tw`px-4`}>
-      {driverRoutes.map((route) => (
+      {routeRequests.map((route) => (
         <DriverRouteCard
-          key={route.id}
-          route={route}
+          key={route.routeRequestId}
+          route={{
+            id: route.routeRequestId,
+            avatar: user?.avatarUrl || "https://i.imgur.com/1bX5QH6.png", // Lấy avatar từ user
+            driverName:
+              user?.username ||
+              route.vehicle?.brand + " " + route.vehicle?.model,
+            rating: 5,
+            from: route.pickupAddress,
+            to: route.dropoffAddress,
+            vehicle: route.vehicle?.vehicleType || "",
+            goods: route.supportedCommodities,
+            size: route.availableVolume + " m³",
+            discount: Math.round(route.availableWeight / 10),
+            estimatedPrice: route.estimatedRouteCost
+              ? `₫${route.estimatedRouteCost.toLocaleString()}`
+              : "₫0",
+            distance: "",
+            duration: "",
+          }}
           variant="driver"
-          onCancel={() => handleCancelRoute(route.id)}
+          onCancel={() => handleCancelRoute(route.routeRequestId)}
         />
       ))}
     </View>
@@ -191,14 +225,20 @@ export default function DriverTripScreen() {
 
   const renderTripsTab = () => (
     <>
-      {renderSectionTitle("Chuyến xe đã tạo", driverRoutes.length)}
-      {driverRoutes.length === 0
-        ? renderEmptyState(
-            "Bạn chưa có chuyến nào",
-            "Hãy tạo đơn để bắt đầu nhận hàng nào",
-            require("../../../../assets/pictures/home/driveroffline.png")
-          )
-        : renderRoutesList()}
+      {renderSectionTitle("Chuyến xe đã tạo", routeRequests.length)}
+      {loading ? (
+        <View style={tw`items-center justify-center py-8`}>
+          <Text style={tw`text-gray-500`}>Đang tải chuyến xe...</Text>
+        </View>
+      ) : routeRequests.length === 0 ? (
+        renderEmptyState(
+          "Bạn chưa có chuyến nào",
+          "Hãy tạo đơn để bắt đầu nhận hàng nào",
+          require("../../../../assets/pictures/home/driveroffline.png")
+        )
+      ) : (
+        renderRoutesList()
+      )}
     </>
   );
 
