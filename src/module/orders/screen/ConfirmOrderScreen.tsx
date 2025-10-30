@@ -608,7 +608,7 @@ export default function ConfirmOrderScreen() {
       </View>
       <View style={tw`mt-2`}>
         <TouchableOpacity
-          style={tw`flex-row items-center mb-4 ${
+          style={tw`flex-row items-center mb-4 bg-gray-50 p-3 rounded-lg ${
             hasError("pickupLocation")
               ? "border border-red-500 rounded-lg p-2"
               : ""
@@ -616,15 +616,18 @@ export default function ConfirmOrderScreen() {
           onPress={handleNavigateBillingAddress}
           activeOpacity={0.8}
         >
-          <MaterialCommunityIcons
-            name="stop"
-            size={14}
-            color="white"
-            style={tw`bg-black rounded-full p-1 `}
-          />
-          <View style={tw`ml-2 flex-1`}>
-            <Text style={tw`text-xs text-gray-500`}>Địa chỉ lấy hàng</Text>
-            <Text style={tw`text-sm text-black font-medium`} numberOfLines={2}>
+          <View
+            style={tw`w-6 h-6 rounded-full bg-black items-center justify-center mt-0.5`}
+          >
+            <MaterialCommunityIcons name="stop" size={14} color="white" />
+          </View>
+
+          <View style={tw`ml-3 flex-1`}>
+            <Text style={tw`text-xs text-gray-500 mb-1`}>Địa chỉ lấy hàng</Text>
+            <Text
+              style={tw`text-sm text-black font-medium mb-1`}
+              numberOfLines={2}
+            >
               {pickupLocation?.fullAddress || "Chưa chọn địa chỉ lấy hàng"}
             </Text>
             {pickupLocation?.receiverName && (
@@ -641,7 +644,7 @@ export default function ConfirmOrderScreen() {
           <Ionicons name="chevron-forward" size={18} color="#6B6B6B" />
         </TouchableOpacity>
         <TouchableOpacity
-          style={tw`flex-row items-center ${
+          style={tw`flex-row items-center bg-gray-50 p-3 rounded-lg  ${
             hasError("dropoffLocation")
               ? "border border-red-500 rounded-lg p-2"
               : ""
@@ -649,15 +652,19 @@ export default function ConfirmOrderScreen() {
           onPress={handleNavigateShippingAddress}
           activeOpacity={0.8}
         >
-          <Entypo
-            name="arrow-down"
-            size={14}
-            color="#fff"
-            style={tw`bg-[#00A982] rounded-full p-1 `}
-          />
-          <View style={tw`ml-2 flex-1`}>
-            <Text style={tw`text-xs text-gray-500`}>Địa chỉ giao hàng</Text>
-            <Text style={tw`text-sm text-black font-medium`} numberOfLines={2}>
+          <View
+            style={tw`w-6 h-6 rounded-full bg-[#00A982] items-center justify-center mt-0.5`}
+          >
+            <Ionicons name="location" size={14} color="white" />
+          </View>
+          <View style={tw`ml-3 flex-1`}>
+            <Text style={tw`text-xs text-gray-500 mb-1`}>
+              Địa chỉ giao hàng
+            </Text>
+            <Text
+              style={tw`text-sm text-black font-medium mb-1`}
+              numberOfLines={2}
+            >
               {dropoffLocation?.fullAddress || "Chưa chọn địa chỉ giao hàng"}
             </Text>
             {dropoffLocation?.receiverName && (

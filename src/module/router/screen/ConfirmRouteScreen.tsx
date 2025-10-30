@@ -209,8 +209,8 @@ export default function ConfirmRouteScreen() {
   const renderRouteSection = () => (
     <View style={tw`bg-white rounded-2xl mx-4 mt-4 p-4 shadow-sm`}>
       <View style={tw`flex-row items-center mb-3`}>
-        <Ionicons name="location-outline" size={20} color="#00A982" />
-        <Text style={tw`ml-2 text-base font-semibold text-black flex-1`}>
+        {/* <Ionicons name="location-outline" size={20} color="#00A982" /> */}
+        <Text style={tw`text-base font-semibold text-black flex-1`}>
           Lộ trình
         </Text>
         <TouchableOpacity onPress={() => setShowRouteInfo((v) => !v)}>
@@ -232,7 +232,7 @@ export default function ConfirmRouteScreen() {
             <View
               style={tw`w-6 h-6 rounded-full bg-black items-center justify-center mt-0.5`}
             >
-              <MaterialCommunityIcons name="circle" size={10} color="white" />
+              <MaterialCommunityIcons name="stop" size={14} color="white" />
             </View>
             <View style={tw`flex-1 ml-3`}>
               <Text style={tw`text-xs text-gray-500 mb-1`}>Điểm đón</Text>
@@ -269,8 +269,8 @@ export default function ConfirmRouteScreen() {
   const renderVehicleInfoSection = () => (
     <View style={tw`bg-white rounded-2xl mx-4 mt-4 p-4 shadow-sm`}>
       <View style={tw`flex-row items-center mb-3`}>
-        <MaterialCommunityIcons name="truck" size={20} color="#00A982" />
-        <Text style={tw`ml-2 text-base font-semibold text-black flex-1`}>
+        {/* <MaterialCommunityIcons name="truck" size={20} color="#00A982" /> */}
+        <Text style={tw`text-base font-semibold text-black flex-1`}>
           Thông tin xe <Text style={tw`text-red-500`}>*</Text>
         </Text>
         <TouchableOpacity onPress={() => setShowVehicleInfo((v) => !v)}>
