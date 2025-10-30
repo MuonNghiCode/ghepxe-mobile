@@ -206,6 +206,53 @@ export interface RouteRequestResponseData {
     vehicle: VehicleResponseData;
     shipRequests: ShipRequestResponseData[];
 }
+export interface DriverMatchingItemData {
+  itemId: string;
+  itemName: string;
+  amount: number;
+  weight: number;
+  description: string | null;
+  imageFileId: string;
+  imageUrl: string | null;
+  size: string;
+  matchScore: number;
+  reason: string;
+}
+
+export interface DriverMatchingSpecialResponse {
+  returnDelivery: boolean;
+  loading: boolean;
+  driverAssistance: boolean;
+  smsNotification: boolean;
+  electronicInvoice: boolean;
+}
+
+export interface DriverMatchingShipResponseData {
+  shipRequestId: string;
+  userId: string;
+  driverId: string | null;
+  driverName: string | null;
+  driverAvatarUrl: string | null;
+  driverRating: number | null;
+  driverPhone: string | null;
+  pickupAddress: string;
+  pickupLatitude: number;
+  pickupLongitude: number;
+  dropoffAddress: string;
+  dropoffLatitude: number;
+  dropoffLongitude: number;
+  pickupWindowStart: string;
+  pickupWindowEnd: string;
+  shipType: string;
+  itemCategory: string;
+  itemType: string;
+  routePolyline: string | null;
+  status: string;
+  specialRequest: DriverMatchingSpecialResponse;
+  items: DriverMatchingItemData[];
+  matchScore: number;
+  reason: string;
+}
 
 // Type aliases
 export type GetRouteRequestResponse = ApiResponse<RouteRequestResponseData>;
@@ -223,4 +270,5 @@ export type GetShipRequestResponse = ApiResponse<ShipRequestResponseData>;
 export type GetShipRequestDetailResponse = ApiResponse<ShipRequestDetailResponseData[]>;
 export type BaseResponse = ResponseModel<null>;
 export type GetFileResponse = ApiResponse<GetFileResponseData>;
+export type MatchingDriverResponse = ApiResponse<DriverMatchingShipResponseData[]>;
 

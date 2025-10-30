@@ -3,11 +3,12 @@ import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
 import tw from "twrnc";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import suggestedOrders from "../../../../constants/suggestedOrder";
 import OrderStatusCard from "../../../../components/OrderStatusCard";
 import DriverRouteCard from "../../components/DriverRouterCard";
 import { useRouteRequest } from "src/hooks/useRouteRequest";
 import { useAuth } from "src/context/AuthContext";
+import { useMatchingService } from "src/hooks/useMatchingService";
+import dayjs from "dayjs";
 
 type TabType = "order" | "trip";
 
@@ -19,13 +20,25 @@ export default function DriverTripScreen() {
   const { routeRequests, getAllRouteRequests, loading } = useRouteRequest();
   const { user } = useAuth();
 
+  // Hook lấy đơn hàng matching từ backend
+  const {
+    matchedRequests,
+    getShipRequestMatching,
+    loading: matchingLoading,
+  } = useMatchingService();
+
   useEffect(() => {
     getAllRouteRequests();
   }, []);
 
-  const pendingOrders = suggestedOrders.filter(
-    (order) => order.status === "CHỜ XÁC NHẬN"
-  );
+  useEffect(() => {
+    // Khi chuyển sang tab "order" hoặc khi có chuyến xe đầu tiên
+    if (tab === "order" && routeRequests.length > 0) {
+      getShipRequestMatching({
+        routeRequestId: routeRequests[0].routeRequestId,
+      });
+    }
+  }, [tab, routeRequests]);
 
   const handleCreateRoute = useCallback(() => {
     navigation.navigate("CreateDriverRoute" as never);
@@ -164,12 +177,44 @@ export default function DriverTripScreen() {
     </View>
   );
 
+  const formatTime = (isoString?: string) =>
+    isoString ? dayjs(isoString).format("DD/MM/YYYY HH:mm") : "";
+
+  const mapStatus = (status?: string) => {
+    if (!status) return "CHỜ XÁC NHẬN";
+    if (status === "Pending") return "CHỜ XÁC NHẬN";
+    if (status === "picking") return "ĐANG GIAO";
+    if (status === "delivered") return "ĐÃ GIAO";
+    if (status === "cancelled") return "ĐÃ HỦY";
+    return status;
+  };
+
+  // Đơn hàng ghép từ AI matching
   const renderOrdersList = () => (
     <View style={tw`px-4`}>
-      {pendingOrders.map((order) => (
+      {matchedRequests.map((order) => (
         <OrderStatusCard
-          key={order.id}
-          order={order}
+          key={order.shipRequestId}
+          order={{
+            id: order.shipRequestId,
+            customerName: order.driverName || "Khách hàng",
+            rating: order.driverRating || 5,
+            requestTime: formatTime(order.pickupWindowStart),
+            pickup: {
+              address: order.pickupAddress,
+              details: order.itemType,
+            },
+            delivery: {
+              address: order.dropoffAddress,
+              distance: "",
+            },
+            price: order.items?.[0]?.weight
+              ? `₫${order.items[0].weight * 10000}`
+              : "₫0",
+            co2Reduction: order.matchScore ? `${order.matchScore}kg` : "12kg",
+            status: mapStatus(order.status),
+            serviceType: "shared",
+          }}
           variant="suggestion"
           onAccept={handleAcceptOrder}
           onContact={handleContactCustomer}
@@ -186,7 +231,7 @@ export default function DriverTripScreen() {
           key={route.routeRequestId}
           route={{
             id: route.routeRequestId,
-            avatar: user?.avatarUrl || "https://i.imgur.com/1bX5QH6.png", // Lấy avatar từ user
+            avatar: user?.avatarUrl || "https://i.imgur.com/1bX5QH6.png",
             driverName:
               user?.username ||
               route.vehicle?.brand + " " + route.vehicle?.model,
@@ -212,14 +257,20 @@ export default function DriverTripScreen() {
 
   const renderOrdersTab = () => (
     <>
-      {renderSectionTitle("Đơn hàng đang chờ", pendingOrders.length)}
-      {pendingOrders.length === 0
-        ? renderEmptyState(
-            "Chưa có đơn hàng nào",
-            "Hãy chờ khách hàng để có đơn nhé!",
-            require("../../../../assets/pictures/home/driveroffline.png")
-          )
-        : renderOrdersList()}
+      {renderSectionTitle("Đơn hàng ghép", matchedRequests.length)}
+      {matchingLoading ? (
+        <View style={tw`items-center justify-center py-8`}>
+          <Text style={tw`text-gray-500`}>Đang tải đơn hàng ghép...</Text>
+        </View>
+      ) : matchedRequests.length === 0 ? (
+        renderEmptyState(
+          "Chưa có đơn hàng ghép nào",
+          "Hãy tạo chuyến xe để nhận đơn hàng ghép!",
+          require("../../../../assets/pictures/home/driveroffline.png")
+        )
+      ) : (
+        renderOrdersList()
+      )}
     </>
   );
 

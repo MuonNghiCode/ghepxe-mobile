@@ -103,3 +103,7 @@ export interface CreateVehicleRequest {
     maxVolume: number,
     maxSeats: number,
 }
+
+export interface DriverMatchingRequest {
+    routeRequestId: string;
+}

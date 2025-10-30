@@ -34,7 +34,8 @@ export const API_ENDPOINTS = {
     ASSIGN: "/api/Driver/RouteRequest/{routeRequestId}/ship-request",
   },
   GEMINI: {
-    MATCHING: "api/User/Gemini/Matching"
+    USER_MATCHING: "api/User/Gemini/Matching",
+    DRIVER_MATCHING: "api/Driver/Gemini/Matching",
   },
   VEHICLE: {
     CREATE_VEHICLE: "/api/Driver/Vehicle/create",
